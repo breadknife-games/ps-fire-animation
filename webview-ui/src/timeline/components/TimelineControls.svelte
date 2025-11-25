@@ -3,12 +3,14 @@
     import IconArrowLeft from '../../lib/components/icons/IconArrowLeft.svelte'
     import IconArrowRight from '../../lib/components/icons/IconArrowRight.svelte'
     import IconCollapseAll from '../../lib/components/icons/IconCollapseAll.svelte'
+    import IconDelete from '../../lib/components/icons/IconDelete.svelte'
     import IconDuplicate from '../../lib/components/icons/IconDuplicate.svelte'
     import IconPageGear from '../../lib/components/icons/IconPageGear.svelte'
     import IconPreset from '../../lib/components/icons/IconPreset.svelte'
     import IconRewind from '../../lib/components/icons/IconRewind.svelte'
     import IconButton from './IconButton.svelte'
     import {
+        deleteFrame,
         duplicateFrame,
         insertFrameAfter,
         openOnionSkinSettings,
@@ -86,6 +88,13 @@
         if (!anchor) return
         await duplicateFrame(anchor.id)
     }
+
+    async function handleDeleteSelectedFrame() {
+        const current = getSelectedFrame()
+        const anchor = current?.frame ?? null
+        if (!anchor) return
+        await deleteFrame(anchor.id)
+    }
 </script>
 
 <div
@@ -122,6 +131,12 @@
         onClick={handleDuplicateSelectedFrame}
         disabled={disableFrameActions}>
         <IconDuplicate class="h-3.5 w-3.5 fill-current" />
+    </IconButton>
+    <IconButton
+        title="Delete frame"
+        onClick={handleDeleteSelectedFrame}
+        disabled={disableFrameActions}>
+        <IconDelete class="h-3.5 w-3.5 fill-current" />
     </IconButton>
     <IconButton title="Toggle onion skin" onClick={toggleOnionSkin}>
         <IconPreset class="h-3.5 w-3.5 fill-current" />

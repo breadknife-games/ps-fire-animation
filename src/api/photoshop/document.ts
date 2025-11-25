@@ -145,6 +145,25 @@ export class FireDocument {
         return this.getLayerWithoutChildren(selections, selections[0])
     }
 
+    async deleteLayer(layer: FireLayer): Promise<void> {
+        await this.psDocument.suspendHistory(async () => {
+            await ps.action.batchPlay(
+                [
+                    {
+                        _obj: 'delete',
+                        _target: [
+                            {
+                                _ref: 'layer',
+                                _id: layer.id
+                            }
+                        ]
+                    }
+                ],
+                {}
+            )
+        }, 'Delete Layer')
+    }
+
     get canvasSize() {
         return {
             width: this.psDocument.width,

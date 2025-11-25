@@ -23,6 +23,7 @@ export const timelineService = {
     setLayerVisibility,
     insertEmptyFrameAfter,
     duplicateFrameLayer,
+    deleteFrame,
     getLayerThumbnail,
     setPlayheadIndex,
     getPreviewState,
@@ -80,6 +81,12 @@ async function insertEmptyFrameAfter(
 async function duplicateFrameLayer(layerId: number): Promise<TimelineState> {
     const layer = await resolveLayer(layerId)
     await layer.document.duplicateLayer(layer)
+    return getState()
+}
+
+async function deleteFrame(layerId: number): Promise<TimelineState> {
+    const layer = await resolveLayer(layerId)
+    await layer.document.deleteLayer(layer)
     return getState()
 }
 

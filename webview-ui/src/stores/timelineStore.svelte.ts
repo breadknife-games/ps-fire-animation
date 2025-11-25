@@ -53,6 +53,12 @@ export async function duplicateFrame(layerId: number) {
     timelineState.state = state
 }
 
+export async function deleteFrame(layerId: number) {
+    const api = getApiClient()
+    const state = await api.timelineDeleteFrame(layerId)
+    timelineState.state = state
+}
+
 export async function setPlayheadIndex(index: number) {
     const api = getApiClient()
     const state = await api.timelineSetPlayheadIndex(index)
