@@ -390,8 +390,8 @@
             </div>
 
             <div
-                class="sticky right-0 z-20 border-l border-timeline-border bg-timeline-surface-1"
-                style={`width: ${addFrameColWidth}px;`}>
+                class="sticky right-[-20px] z-20 border-l border-timeline-border bg-timeline-surface-1"
+                style={`width: ${addFrameColWidth + 20}px;`}>
                 {#each visibleRows as item}
                     <TimelineAddFrameRow row={item.row} />
                 {/each}

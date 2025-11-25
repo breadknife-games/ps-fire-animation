@@ -459,11 +459,20 @@ async function normalizeLayersRecursive(
                 `[normalizeLayersRecursive] Video group "${layer.name}" - normalizing ${frames.length} frames`
             )
             // Call normalizeFrame for each frame in order - they stack up automatically
-            for (const frame of frames) {
+            // Also rename each frame to "GroupName 1", "GroupName 2", etc.
+            for (let i = 0; i < frames.length; i++) {
+                const frame = frames[i] as FireLayer
                 console.log(
                     `[normalizeLayersRecursive] Normalizing frame "${frame.name}" (id: ${frame.id})`
                 )
                 await PSTimeline.normalizeFrame(frame.id)
+
+                // Rename frame to sensible name: "GroupName 1", "GroupName 2", etc.
+                const newName = `${layer.name} | ${i + 1}`
+                console.log(
+                    `[normalizeLayersRecursive] Renaming frame to "${newName}"`
+                )
+                await frame.setName(newName)
             }
         } else if (layer.type === FireLayerType.Group) {
             console.log(

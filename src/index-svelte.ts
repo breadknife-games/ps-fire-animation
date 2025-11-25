@@ -5,6 +5,7 @@ import { uxp } from './globals'
 import { timelineService } from './services/timeline-service'
 import { getTimelineWebviewAPI } from './services/webview-ref'
 import type { ThemeName } from '../webview-ui/src/stores/themeStore'
+import type { UIScale } from '../webview-ui/src/stores/uiScaleStore'
 
 console.clear() // Clear logs on each reload
 
@@ -24,6 +25,20 @@ async function setTheme(theme: ThemeName) {
         }
     } else {
         console.warn('[Menu] Webview API not ready for theme change')
+    }
+}
+
+async function setUIScale(scale: UIScale) {
+    const api = getTimelineWebviewAPI()
+    if (api) {
+        try {
+            await api.setUIScale(scale)
+            console.log('[Menu] UI scale changed to:', scale)
+        } catch (error) {
+            console.error('[Menu] Failed to set UI scale:', error)
+        }
+    } else {
+        console.warn('[Menu] Webview API not ready for UI scale change')
     }
 }
 
@@ -47,7 +62,13 @@ const menuActions: Record<string, () => void> = {
     themeDracula: () => setTheme('dracula'),
     themeMonokai: () => setTheme('monokai'),
     themeSolarized: () => setTheme('solarized'),
-    themeSynthwave: () => setTheme('synthwave')
+    themeSynthwave: () => setTheme('synthwave'),
+    scale75: () => setUIScale(75),
+    scale80: () => setUIScale(80),
+    scale85: () => setUIScale(85),
+    scale90: () => setUIScale(90),
+    scale95: () => setUIScale(95),
+    scale100: () => setUIScale(100)
 }
 
 // Menu items with submenu support
@@ -71,6 +92,18 @@ const timelineMenuItems = [
             { id: 'themeMonokai', label: 'Monokai' },
             { id: 'themeSolarized', label: 'Solarized' },
             { id: 'themeSynthwave', label: 'Synthwave' }
+        ]
+    },
+    {
+        id: 'scaleSubmenu',
+        label: 'UI Scale',
+        submenu: [
+            { id: 'scale75', label: '75%' },
+            { id: 'scale80', label: '80%' },
+            { id: 'scale85', label: '85%' },
+            { id: 'scale90', label: '90%' },
+            { id: 'scale95', label: '95%' },
+            { id: 'scale100', label: '100%' }
         ]
     }
 ]
