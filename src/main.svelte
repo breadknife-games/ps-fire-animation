@@ -8,6 +8,7 @@
         bindPreviewWebview,
         bindTimelineWebview
     } from './services/webview-sync'
+    import { setTimelineWebviewAPI } from './services/webview-ref'
 
     let webviewAPIs: WebviewAPI[]
 
@@ -16,6 +17,7 @@
     onMount(async () => {
         webviewAPIs = await webviewInitHost({ multi: true })
         let [timelineWebviewAPI, previewWebviewAPI] = webviewAPIs // for multi webviews
+        setTimelineWebviewAPI(timelineWebviewAPI)
         await bindTimelineWebview(timelineWebviewAPI)
         await bindPreviewWebview(previewWebviewAPI)
     })

@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* ===== Theme Definitions ===== */
+
+/* Midnight - Original dark blue theme */
 @theme {
   --color-timeline-surface-0: #07090f;
   --color-timeline-surface-1: #0e111b;
@@ -14,6 +17,178 @@
   --color-timeline-muted: #9aa4c3;
   --color-timeline-playhead: #346bff;
   --color-timeline-playhead-line: #ff4d4d;
+}
+
+/* Darkest - Matches Photoshop's darkest theme */
+:root[data-theme="darkest"] {
+  --color-timeline-surface-0: #1a1a1a;
+  --color-timeline-surface-1: #323232;
+  --color-timeline-surface-2: #2b2b2b;
+  --color-timeline-surface-3: #262626;
+  --color-timeline-surface-4: #262626;
+  --color-timeline-border: #262626;
+  --color-timeline-scrollbar: #2a2a2a;
+  --color-timeline-button-hover: #3a3a3a;
+  --color-timeline-button-active: #454545;
+  --color-timeline-foreground: #e8e8e8;
+  --color-timeline-muted: #909090;
+  --color-timeline-playhead: #3d8eff;
+  --color-timeline-playhead-line: #ff5252;
+}
+
+/* Dark - Matches Photoshop's dark gray theme */
+:root[data-theme="dark"] {
+  --color-timeline-surface-0: #2b2b2b;
+  --color-timeline-surface-1: #535353;
+  --color-timeline-surface-2: #4d4d4d;
+  --color-timeline-surface-3: #424242;
+  --color-timeline-surface-4: #424242;
+  --color-timeline-border: #3e3e3e;
+  --color-timeline-scrollbar: #3d3d3d;
+  --color-timeline-button-hover: #4d4d4d;
+  --color-timeline-button-active: #585858;
+  --color-timeline-foreground: #e8e8e8;
+  --color-timeline-muted: #999999;
+  --color-timeline-playhead: #3d8eff;
+  --color-timeline-playhead-line: #ff5252;
+}
+
+/* Medium - Matches Photoshop's medium gray theme */
+:root[data-theme="medium"] {
+  --color-timeline-surface-0: #535353;
+  --color-timeline-surface-1: #b8b8b8;
+  --color-timeline-surface-2: #b0b0b0;
+  --color-timeline-surface-3: #a3a3a3;
+  --color-timeline-surface-4: #a3a3a3;
+  --color-timeline-border: #808080;
+  --color-timeline-scrollbar: #606060;
+  --color-timeline-button-hover: #707070;
+  --color-timeline-button-active: #7a7a7a;
+  --color-timeline-foreground: #1a1a1a;
+  --color-timeline-muted: #505050;
+  --color-timeline-playhead: #4a9cff;
+  --color-timeline-playhead-line: #ff6060;
+}
+
+/* Light - Matches Photoshop's lightest theme */
+:root[data-theme="light"] {
+  --color-timeline-surface-0: #b8b8b8;
+  --color-timeline-surface-1: #f0f0f0;
+  --color-timeline-surface-2: #e8e8e8;
+  --color-timeline-surface-3: #dbdbdb;
+  --color-timeline-surface-4: #dbdbdb;
+  --color-timeline-border: #a0a0a0;
+  --color-timeline-scrollbar: #c0c0c0;
+  --color-timeline-button-hover: #b8b8b8;
+  --color-timeline-button-active: #aeaeae;
+  --color-timeline-foreground: #1a1a1a;
+  --color-timeline-muted: #505050;
+  --color-timeline-playhead: #2d7aff;
+  --color-timeline-playhead-line: #e63939;
+}
+
+/* ===== Custom Themes ===== */
+
+/* Midnight - Original dark blue theme (also default) */
+:root[data-theme="midnight"] {
+  --color-timeline-surface-0: #07090f;
+  --color-timeline-surface-1: #0e111b;
+  --color-timeline-surface-2: #151a26;
+  --color-timeline-surface-3: #1c2233;
+  --color-timeline-surface-4: #232a3d;
+  --color-timeline-border: #2f374c;
+  --color-timeline-scrollbar: #1b2030;
+  --color-timeline-button-hover: #2b3348;
+  --color-timeline-button-active: #343d55;
+  --color-timeline-foreground: #f2f5ff;
+  --color-timeline-muted: #9aa4c3;
+  --color-timeline-playhead: #346bff;
+  --color-timeline-playhead-line: #ff4d4d;
+}
+
+/* Nord - Arctic, cool blue theme */
+:root[data-theme="nord"] {
+  --color-timeline-surface-0: #242933;
+  --color-timeline-surface-1: #2e3440;
+  --color-timeline-surface-2: #3b4252;
+  --color-timeline-surface-3: #434c5e;
+  --color-timeline-surface-4: #4c566a;
+  --color-timeline-border: #4c566a;
+  --color-timeline-scrollbar: #3b4252;
+  --color-timeline-button-hover: #434c5e;
+  --color-timeline-button-active: #4c566a;
+  --color-timeline-foreground: #eceff4;
+  --color-timeline-muted: #d8dee9;
+  --color-timeline-playhead: #88c0d0;
+  --color-timeline-playhead-line: #bf616a;
+}
+
+/* Dracula - Purple/pink vampire theme */
+:root[data-theme="dracula"] {
+  --color-timeline-surface-0: #1e1f29;
+  --color-timeline-surface-1: #282a36;
+  --color-timeline-surface-2: #343746;
+  --color-timeline-surface-3: #3d4051;
+  --color-timeline-surface-4: #44475a;
+  --color-timeline-border: #6272a4;
+  --color-timeline-scrollbar: #343746;
+  --color-timeline-button-hover: #44475a;
+  --color-timeline-button-active: #6272a4;
+  --color-timeline-foreground: #f8f8f2;
+  --color-timeline-muted: #bd93f9;
+  --color-timeline-playhead: #ff79c6;
+  --color-timeline-playhead-line: #ff5555;
+}
+
+/* Monokai - Classic warm code editor theme */
+:root[data-theme="monokai"] {
+  --color-timeline-surface-0: #1e1f1c;
+  --color-timeline-surface-1: #272822;
+  --color-timeline-surface-2: #32332c;
+  --color-timeline-surface-3: #3c3d36;
+  --color-timeline-surface-4: #464740;
+  --color-timeline-border: #5a5b4d;
+  --color-timeline-scrollbar: #32332c;
+  --color-timeline-button-hover: #3c3d36;
+  --color-timeline-button-active: #464740;
+  --color-timeline-foreground: #f8f8f2;
+  --color-timeline-muted: #a6a68a;
+  --color-timeline-playhead: #a6e22e;
+  --color-timeline-playhead-line: #f92672;
+}
+
+/* Solarized Dark - Precision colors for code */
+:root[data-theme="solarized"] {
+  --color-timeline-surface-0: #001e26;
+  --color-timeline-surface-1: #002b36;
+  --color-timeline-surface-2: #073642;
+  --color-timeline-surface-3: #0a4a5c;
+  --color-timeline-surface-4: #0d5b70;
+  --color-timeline-border: #586e75;
+  --color-timeline-scrollbar: #073642;
+  --color-timeline-button-hover: #0a4a5c;
+  --color-timeline-button-active: #0d5b70;
+  --color-timeline-foreground: #93a1a1;
+  --color-timeline-muted: #657b83;
+  --color-timeline-playhead: #268bd2;
+  --color-timeline-playhead-line: #dc322f;
+}
+
+/* Synthwave - Retro 80s neon */
+:root[data-theme="synthwave"] {
+  --color-timeline-surface-0: #1a1025;
+  --color-timeline-surface-1: #241b2f;
+  --color-timeline-surface-2: #2d2340;
+  --color-timeline-surface-3: #362b4a;
+  --color-timeline-surface-4: #3f3354;
+  --color-timeline-border: #ff7edb;
+  --color-timeline-scrollbar: #2d2340;
+  --color-timeline-button-hover: #3f3354;
+  --color-timeline-button-active: #4a3d60;
+  --color-timeline-foreground: #f0e6ff;
+  --color-timeline-muted: #e699ff;
+  --color-timeline-playhead: #00ffff;
+  --color-timeline-playhead-line: #ff2a6d;
 }
 
 html,

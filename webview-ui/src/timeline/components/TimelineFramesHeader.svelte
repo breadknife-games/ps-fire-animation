@@ -18,7 +18,7 @@
             <div
                 class={`flex flex-col border-r border-timeline-border px-2 py-1 text-[10px] uppercase tracking-wide ${
                     i === headIndex
-                        ? 'bg-timeline-surface-4 text-white'
+                        ? 'bg-timeline-surface-4 text-timeline-foreground'
                         : 'text-timeline-muted'
                 }`}
                 style={`width: ${timelineState.frameWidth}px; min-width: ${timelineState.frameWidth}px;`}>
