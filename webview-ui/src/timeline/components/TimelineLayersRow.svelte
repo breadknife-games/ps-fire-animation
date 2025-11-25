@@ -4,6 +4,10 @@
     import IconVisibility from '../../lib/components/icons/IconVisibility.svelte'
     import IconVisibilityOff from '../../lib/components/icons/IconVisibilityOff.svelte'
     import IconDragHandle from '../../lib/components/icons/IconDragHandle.svelte'
+    import IconAnimation from '../../lib/components/icons/IconAnimation.svelte'
+    import IconLayer from '../../lib/components/icons/IconLayer.svelte'
+    import IconFolder from '../../lib/components/icons/IconFolder.svelte'
+    import IconFolderOpen from '../../lib/components/icons/IconFolderOpen.svelte'
     import ContextMenu from '../../lib/components/ContextMenu.svelte'
     import { getRowHeight } from '../utils'
     import {
@@ -55,6 +59,7 @@
 
     const isFolder = $derived(!!row.children?.length)
     const isGroup = $derived(row.type === 'group')
+    const isVideo = $derived(row.type === 'video')
     const expanded = $derived(
         timelineState.expandedRows?.[row.id] ?? row.expanded ?? false
     )
@@ -286,19 +291,29 @@
         ondblclick={handleRowDoubleClick}
         role="listitem">
         <div
-            class="flex flex-1 items-center gap-2"
+            class="flex flex-1 items-center gap-1"
             style={`padding-left: calc(${indent} + 0.25rem);`}>
             {#if isFolder || isGroup || row.frames.length}
                 <div class="shrink-0">
-                    <RowExpander
-                        {expanded}
-                        folder={isFolder || isGroup}
-                        onToggle={handleToggle} />
+                    <RowExpander {expanded} onToggle={handleToggle} />
                 </div>
             {:else}
                 <div class="w-5"></div>
             {/if}
-            <div class="color-picker-container flex items-center">
+            <div class="shrink-0 text-timeline-muted">
+                {#if isVideo}
+                    <IconAnimation class="h-3 w-3 fill-current" />
+                {:else if isGroup || isFolder}
+                    {#if expanded}
+                        <IconFolderOpen class="h-3 w-3 fill-current" />
+                    {:else}
+                        <IconFolder class="h-3 w-3 fill-current" />
+                    {/if}
+                {:else}
+                    <IconLayer class="h-3 w-3 fill-current" />
+                {/if}
+            </div>
+            <div class="color-picker-container flex items-center ml-1">
                 <button
                     bind:this={colorButtonEl}
                     type="button"

@@ -1,16 +1,12 @@
 <script lang="ts">
     import IconChevronDown from '../../lib/components/icons/IconChevronDown.svelte'
     import IconChevronRight from '../../lib/components/icons/IconChevronRight.svelte'
-    import IconFolder from '../../lib/components/icons/IconFolder.svelte'
-    import IconFolderOpen from '../../lib/components/icons/IconFolderOpen.svelte'
 
     const {
         expanded: expandedProp = false,
-        folder = false,
         onToggle = () => {}
     } = $props<{
         expanded?: boolean
-        folder?: boolean
         onToggle?: (value: boolean) => void
     }>()
 
@@ -33,13 +29,7 @@
     onclick={toggle}>
     {#if expanded}
         <IconChevronDown class="h-3 w-3 fill-current" />
-        {#if folder}
-            <IconFolderOpen class="h-3 w-3 fill-current" />
-        {/if}
     {:else}
         <IconChevronRight class="h-3 w-3 fill-current" />
-        {#if folder}
-            <IconFolder class="h-3 w-3 fill-current" />
-        {/if}
     {/if}
 </button>
