@@ -121,10 +121,12 @@ export class FireLayer {
         this.expanded = layer.layerSectionExpanded
 
         // Photoshop doesn't tell you if a group is a video group...
+        // A video group must have children AND all children must be layers
+        // Empty groups should remain as regular groups
         if (layer.layerKind === PSLayerKind.Pixel) {
             this.type = FireLayerType.Layer
         } else if (layer.layerKind === PSLayerKind.Group) {
-            if (this.children.every(l => l.type === FireLayerType.Layer)) {
+            if (this.children.length > 0 && this.children.every(l => l.type === FireLayerType.Layer)) {
                 this.type = FireLayerType.Video
             } else {
                 this.type = FireLayerType.Group

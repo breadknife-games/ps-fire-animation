@@ -4,7 +4,10 @@
     import IconVisibility from '../../lib/components/icons/IconVisibility.svelte'
     import IconVisibilityOff from '../../lib/components/icons/IconVisibilityOff.svelte'
     import { getRowHeight } from '../utils'
-    import { useTimelinePanelContext } from '../timelineContext'
+    import {
+        useTimelinePanelContext,
+        type DropPosition
+    } from '../timelineContext'
     import {
         toggleRowVisibility,
         setLayerColor,
@@ -16,7 +19,14 @@
         depth?: number
     }>()
 
-    const { toggleRow, timelineState } = useTimelinePanelContext()
+    const {
+        toggleRow,
+        timelineState,
+        startDrag,
+        updateDropTarget,
+        endDrag,
+        executeDrop
+    } = useTimelinePanelContext()
 
     const layerColors = [
         { value: 'none', name: 'None', hex: '#3a3a3a' },
@@ -41,6 +51,7 @@
     let renameInputEl: HTMLInputElement | null = $state(null)
 
     const isFolder = $derived(!!row.children?.length)
+    const isGroup = $derived(row.type === 'group')
     const expanded = $derived(
         timelineState.expandedRows?.[row.id] ?? row.expanded ?? false
     )
@@ -54,8 +65,18 @@
     )
     const indent = $derived(`${Math.min(depth, 6) * 0.75}rem`)
 
+    // Drag state
+    const isDragging = $derived(timelineState.drag.draggingRowId === row.id)
+    const isDropTarget = $derived(timelineState.drag.dropTargetRowId === row.id)
+    const dropPosition = $derived(
+        isDropTarget ? timelineState.drag.dropPosition : null
+    )
+    const hasDragActive = $derived(timelineState.drag.draggingRowId !== null)
+
+    let rowEl: HTMLDivElement | null = $state(null)
+
     function handleToggle(_: boolean) {
-        if (!isFolder && !row.frames.length) return
+        if (!isFolder && !isGroup && !row.frames.length) return
         toggleRow(row)
     }
 
@@ -114,22 +135,118 @@
     function handleRenameBlur() {
         handleRenameSubmit()
     }
+
+    // Drag and drop handlers
+    function handleDragStart(event: DragEvent) {
+        if (isRenaming) {
+            event.preventDefault()
+            return
+        }
+        event.dataTransfer?.setData('text/plain', String(row.id))
+        event.dataTransfer!.effectAllowed = 'move'
+        startDrag(row.id)
+    }
+
+    function handleDragEnd(event: DragEvent) {
+        endDrag()
+    }
+
+    function handleDragOver(event: DragEvent) {
+        if (!hasDragActive || isDragging) return
+        event.preventDefault()
+        event.dataTransfer!.dropEffect = 'move'
+
+        if (!rowEl) return
+        const rect = rowEl.getBoundingClientRect()
+        const y = event.clientY - rect.top
+        const height = rect.height
+
+        // Determine drop position based on mouse position and folder state
+        const canDropInside = isGroup || isFolder
+        const isExpandedFolder = canDropInside && expanded
+
+        let position: DropPosition
+
+        if (isExpandedFolder) {
+            // Expanded folder: top = above (outside), rest = inside
+            // "Below" an expanded folder visually means inside it
+            if (y < height * 0.25) {
+                position = 'above'
+            } else {
+                position = 'inside'
+            }
+        } else if (canDropInside) {
+            // Collapsed folder: top = above, middle = inside, bottom = below
+            if (y < height * 0.25) {
+                position = 'above'
+            } else if (y > height * 0.75) {
+                position = 'below'
+            } else {
+                position = 'inside'
+            }
+        } else {
+            // Non-folder: split into above/below only
+            position = y < height * 0.5 ? 'above' : 'below'
+        }
+
+        updateDropTarget(row.id, position)
+    }
+
+    function handleDragLeave(event: DragEvent) {
+        // Only clear if we're actually leaving this element
+        const relatedTarget = event.relatedTarget as HTMLElement | null
+        if (!rowEl?.contains(relatedTarget)) {
+            if (isDropTarget) {
+                updateDropTarget(null, null)
+            }
+        }
+    }
+
+    function handleDrop(event: DragEvent) {
+        event.preventDefault()
+        executeDrop()
+    }
 </script>
 
 <svelte:window onclick={handleClickOutside} />
 
-<div class="flex flex-col">
+<div class="flex flex-col relative">
+    <!-- Drop indicator: above -->
+    {#if dropPosition === 'above'}
+        <div
+            class="absolute left-0 right-0 top-0 h-0.5 bg-blue-500 z-10 pointer-events-none">
+        </div>
+    {/if}
+
+    <!-- Drop indicator: inside (group highlight) -->
+    {#if dropPosition === 'inside'}
+        <div
+            class="absolute inset-0 border-2 border-blue-500 rounded z-10 pointer-events-none bg-blue-500/10">
+        </div>
+    {/if}
+
     <div
-        class="flex items-start border-b border-timeline-border bg-timeline-surface-1 py-1 text-xs text-timeline-foreground"
-        style={`height: ${rowHeight}px; min-height: ${rowHeight}px; max-height: ${rowHeight}px;`}>
+        bind:this={rowEl}
+        class="flex items-start border-b border-timeline-border py-1 text-xs text-timeline-foreground transition-opacity cursor-grab active:cursor-grabbing"
+        class:bg-timeline-surface-1={!isDragging}
+        class:bg-timeline-surface-3={isDragging}
+        class:opacity-50={isDragging}
+        style={`height: ${rowHeight}px; min-height: ${rowHeight}px; max-height: ${rowHeight}px;`}
+        draggable={!isRenaming}
+        ondragstart={handleDragStart}
+        ondragend={handleDragEnd}
+        ondragover={handleDragOver}
+        ondragleave={handleDragLeave}
+        ondrop={handleDrop}
+        role="listitem">
         <div
             class="flex flex-1 items-center gap-2"
             style={`padding-left: calc(${indent} + 0.25rem);`}>
-            {#if isFolder || row.frames.length}
+            {#if isFolder || isGroup || row.frames.length}
                 <div class="shrink-0">
                     <RowExpander
                         {expanded}
-                        folder={isFolder}
+                        folder={isFolder || isGroup}
                         onToggle={handleToggle} />
                 </div>
             {:else}
@@ -180,6 +297,13 @@
             {/if}
         </button>
     </div>
+
+    <!-- Drop indicator: below -->
+    {#if dropPosition === 'below'}
+        <div
+            class="absolute left-0 right-0 bottom-0 h-0.5 bg-blue-500 z-10 pointer-events-none">
+        </div>
+    {/if}
 </div>
 
 {#if colorPickerOpen}

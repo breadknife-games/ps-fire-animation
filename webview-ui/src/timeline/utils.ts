@@ -92,7 +92,8 @@ export function getRowHeight(
   collapsedHeight: number,
   expandedHeight: number,
 ) {
-  if (row.children?.length) return collapsedHeight;
+  // Groups/folders always stay collapsed height (they don't have thumbnails)
+  if (row.type === 'group' || row.children?.length) return collapsedHeight;
   return expanded ? expandedHeight : collapsedHeight;
 }
 

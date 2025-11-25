@@ -39,4 +39,9 @@ export const timelineGetLayerThumbnail = (
 export const timelineToggleOnionSkin = () => timelineService.toggleOnionSkin()
 export const timelineOpenOnionSkinSettings = () =>
     timelineService.openOnionSkinSettings()
+export const timelineMoveLayer = (
+    layerId: number,
+    targetLayerId: number,
+    position: 'above' | 'below' | 'inside'
+) => timelineService.moveLayer(layerId, targetLayerId, position)
 export const previewGetState = () => timelineService.getPreviewState()

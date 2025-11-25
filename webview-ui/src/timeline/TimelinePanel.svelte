@@ -5,6 +5,7 @@
     } from '../../../src/shared/timeline'
     import {
         fetchFrameThumbnail,
+        moveLayer,
         setPlayheadIndex
     } from '../stores/timelineStore.svelte'
     import {
@@ -26,7 +27,8 @@
     import {
         setTimelinePanelContext,
         type TimelinePanelContext,
-        type TimelinePanelState
+        type TimelinePanelState,
+        type DropPosition
     } from './timelineContext'
     import { readable, toStore } from 'svelte/store'
     import { untrack } from 'svelte'
@@ -45,7 +47,12 @@
         thumbnailStates: {},
         frameWidth: 120,
         collapsedRowHeight: 28,
-        expandedRowHeight: 0
+        expandedRowHeight: 0,
+        drag: {
+            draggingRowId: null,
+            dropTargetRowId: null,
+            dropPosition: null
+        }
     })
 
     const layerColWidth = 320
@@ -268,12 +275,60 @@
         scrollX = newScrollX
     }
 
+    function startDrag(rowId: number) {
+        timelinePanelState.drag = {
+            draggingRowId: rowId,
+            dropTargetRowId: null,
+            dropPosition: null
+        }
+    }
+
+    function updateDropTarget(
+        rowId: number | null,
+        position: DropPosition | null
+    ) {
+        timelinePanelState.drag.dropTargetRowId = rowId
+        timelinePanelState.drag.dropPosition = position
+    }
+
+    function endDrag() {
+        timelinePanelState.drag = {
+            draggingRowId: null,
+            dropTargetRowId: null,
+            dropPosition: null
+        }
+    }
+
+    async function executeDrop() {
+        const { draggingRowId, dropTargetRowId, dropPosition } =
+            timelinePanelState.drag
+        if (!draggingRowId || !dropTargetRowId || !dropPosition) {
+            endDrag()
+            return
+        }
+        // Don't allow dropping on self
+        if (draggingRowId === dropTargetRowId) {
+            endDrag()
+            return
+        }
+        try {
+            await moveLayer(draggingRowId, dropTargetRowId, dropPosition)
+        } catch (e) {
+            console.error('Failed to move layer:', e)
+        }
+        endDrag()
+    }
+
     setTimelinePanelContext({
         timelineState: timelinePanelState,
         toggleRow,
         setExpandedRows,
         loadThumbnailsForRow: (row: TimelineRowDTO) =>
-            loadThumbnailsForRow(row, timelineState.thumbnailResolution)
+            loadThumbnailsForRow(row, timelineState.thumbnailResolution),
+        startDrag,
+        updateDropTarget,
+        endDrag,
+        executeDrop
     })
 </script>
 

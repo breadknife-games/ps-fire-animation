@@ -30,7 +30,8 @@ export const timelineService = {
     setPlayheadIndex,
     getPreviewState,
     toggleOnionSkin,
-    openOnionSkinSettings
+    openOnionSkinSettings,
+    moveLayer
 }
 
 async function getState(): Promise<TimelineState> {
@@ -270,4 +271,14 @@ async function toggleOnionSkin(): Promise<void> {
 
 async function openOnionSkinSettings(): Promise<void> {
     await PSTimeline.openOnionSkinSettings()
+}
+
+async function moveLayer(
+    layerId: number,
+    targetLayerId: number,
+    position: 'above' | 'below' | 'inside'
+): Promise<TimelineState> {
+    const document = FireDocument.current
+    await document.moveLayer(layerId, targetLayerId, position)
+    return getState()
 }

@@ -133,3 +133,13 @@ export async function openOnionSkinSettings() {
     const api = getApiClient()
     await api.timelineOpenOnionSkinSettings()
 }
+
+export async function moveLayer(
+    layerId: number,
+    targetLayerId: number,
+    position: 'above' | 'below' | 'inside'
+) {
+    const api = getApiClient()
+    const state = await api.timelineMoveLayer(layerId, targetLayerId, position)
+    timelineState.state = state
+}

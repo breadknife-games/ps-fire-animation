@@ -164,6 +164,68 @@ export class FireDocument {
         }, 'Delete Layer')
     }
 
+    /**
+     * Move a layer to a new position relative to a target layer
+     * @param layerId - The layer to move
+     * @param targetLayerId - The reference layer for placement
+     * @param position - Where to place relative to target: 'above', 'below', or 'inside' (for groups)
+     */
+    async moveLayer(
+        layerId: number,
+        targetLayerId: number,
+        position: 'above' | 'below' | 'inside'
+    ): Promise<void> {
+        const findLayerById = (
+            layers: any[],
+            id: number
+        ): any | null => {
+            for (const layer of layers) {
+                if (layer.id === id) return layer
+                if (layer.layers) {
+                    const found = findLayerById(layer.layers, id)
+                    if (found) return found
+                }
+            }
+            return null
+        }
+
+        await ps.core.executeAsModal(
+            async () => {
+                const doc = this.psDocument
+                const layerToMove = findLayerById([...doc.layers], layerId)
+                const targetLayer = findLayerById([...doc.layers], targetLayerId)
+
+                if (!layerToMove || !targetLayer) {
+                    console.error('Layer not found', { layerId, targetLayerId })
+                    return
+                }
+
+                console.log('Moving layer', {
+                    layerId,
+                    targetLayerId,
+                    position,
+                    layerName: layerToMove.name,
+                    targetName: targetLayer.name,
+                    targetKind: targetLayer.kind,
+                    targetHasLayers: !!targetLayer.layers
+                })
+
+                if (position === 'inside') {
+                    // Move layer into a group using PLACEINSIDE
+                    console.log('Moving inside group using PLACEINSIDE')
+                    layerToMove.move(targetLayer, ps.constants.ElementPlacement.PLACEINSIDE)
+                } else if (position === 'above') {
+                    // Move layer above target
+                    layerToMove.move(targetLayer, ps.constants.ElementPlacement.PLACEBEFORE)
+                } else {
+                    // Move layer below target
+                    layerToMove.move(targetLayer, ps.constants.ElementPlacement.PLACEAFTER)
+                }
+            },
+            { commandName: 'Move Layer' }
+        )
+    }
+
     get canvasSize() {
         return {
             width: this.psDocument.width,

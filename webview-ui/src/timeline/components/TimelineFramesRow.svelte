@@ -30,6 +30,7 @@
     )
     const folderFrames = $derived(getFolderFrameCount(row))
     const hasFrames = $derived(row.frames.length > 0)
+    const isEmptyGroup = $derived(row.type === 'group' && !row.children?.length)
     const fullRowFrame = $derived(
         row.frames.length === 1 && row.frames[0].id === row.id
     )
@@ -63,7 +64,8 @@
                     onSelect={handleSelect}
                     isFolder={!!row.children?.length} />
             {/each}
-        {:else}
+        {:else if !isEmptyGroup}
+            <!-- Show placeholder frame for folders with children, but not empty groups -->
             <FrameItem
                 frame={{
                     id: row.id,
