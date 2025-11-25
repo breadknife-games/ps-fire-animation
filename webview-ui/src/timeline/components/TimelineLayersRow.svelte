@@ -7,7 +7,8 @@
     import { useTimelinePanelContext } from '../timelineContext'
     import {
         toggleRowVisibility,
-        setLayerColor
+        setLayerColor,
+        renameLayer
     } from '../../stores/timelineStore.svelte'
 
     const { row, depth = 0 } = $props<{
@@ -35,6 +36,9 @@
     let colorPickerOpen = $state(false)
     let colorButtonEl: HTMLButtonElement | null = $state(null)
     let dropdownPos = $state({ top: 0, left: 0 })
+    let isRenaming = $state(false)
+    let renameValue = $state('')
+    let renameInputEl: HTMLInputElement | null = $state(null)
 
     const isFolder = $derived(!!row.children?.length)
     const expanded = $derived(
@@ -80,6 +84,36 @@
             colorPickerOpen = false
         }
     }
+
+    function handleNameDoubleClick(event: MouseEvent) {
+        event.stopPropagation()
+        isRenaming = true
+        renameValue = row.name
+        // Focus input on next tick after it's rendered
+        setTimeout(() => renameInputEl?.focus(), 0)
+    }
+
+    async function handleRenameSubmit() {
+        const trimmedName = renameValue.trim()
+        if (trimmedName && trimmedName !== row.name) {
+            await renameLayer(row.id, trimmedName)
+        }
+        isRenaming = false
+    }
+
+    function handleRenameKeydown(event: KeyboardEvent) {
+        if (event.key === 'Enter') {
+            event.preventDefault()
+            handleRenameSubmit()
+        } else if (event.key === 'Escape') {
+            event.preventDefault()
+            isRenaming = false
+        }
+    }
+
+    function handleRenameBlur() {
+        handleRenameSubmit()
+    }
 </script>
 
 <svelte:window onclick={handleClickOutside} />
@@ -101,7 +135,7 @@
             {:else}
                 <div class="w-5"></div>
             {/if}
-            <div class="color-picker-container">
+            <div class="color-picker-container flex items-center">
                 <button
                     bind:this={colorButtonEl}
                     type="button"
@@ -110,9 +144,24 @@
                     title="Change layer color"
                     onclick={handleColorClick}></button>
             </div>
-            <span class="truncate font-medium text-timeline-foreground/90">
-                {row.name}
-            </span>
+            {#if isRenaming}
+                <input
+                    bind:this={renameInputEl}
+                    bind:value={renameValue}
+                    type="text"
+                    class="min-w-0 flex-1 truncate rounded border border-timeline-border bg-timeline-surface-2 px-1 text-xs font-medium leading-4 text-timeline-foreground/90 outline-none focus:border-blue-500"
+                    onkeydown={handleRenameKeydown}
+                    onblur={handleRenameBlur}
+                    onclick={e => e.stopPropagation()} />
+            {:else}
+                <!-- svelte-ignore a11y_no_static_element_interactions -->
+                <span
+                    class="truncate rounded border border-transparent px-1 font-medium leading-4 text-timeline-foreground/90 cursor-text"
+                    ondblclick={handleNameDoubleClick}
+                    title="Double-click to rename">
+                    {row.name}
+                </span>
+            {/if}
         </div>
         <button
             type="button"

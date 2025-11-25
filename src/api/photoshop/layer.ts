@@ -206,6 +206,29 @@ export class FireLayer {
         }, 'Set Layer Color')
     }
 
+    async setName(name: string) {
+        await this.document.suspendHistory(async () => {
+            await ps.action.batchPlay(
+                [
+                    {
+                        _obj: 'set',
+                        _target: [
+                            {
+                                _ref: 'layer',
+                                _id: this.id
+                            }
+                        ],
+                        to: {
+                            _obj: 'layer',
+                            name
+                        }
+                    }
+                ],
+                {}
+            )
+        }, 'Rename Layer')
+    }
+
     async getBase64ImageData(
         width: number,
         height: number

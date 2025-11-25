@@ -47,6 +47,12 @@ export async function setLayerColor(layerId: number, colorValue: string) {
     timelineState.state = state
 }
 
+export async function renameLayer(layerId: number, name: string) {
+    const api = getApiClient()
+    const state = await api.timelineRenameLayer(layerId, name)
+    timelineState.state = state
+}
+
 export async function insertFrameAfter(layerId: number) {
     const api = getApiClient()
     const state = await api.timelineInsertEmptyFrameAfter(layerId)

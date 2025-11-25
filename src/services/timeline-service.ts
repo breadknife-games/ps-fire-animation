@@ -22,6 +22,7 @@ export const timelineService = {
     selectLayer,
     setLayerVisibility,
     setLayerColor,
+    renameLayer,
     insertEmptyFrameAfter,
     duplicateFrameLayer,
     deleteFrame,
@@ -76,6 +77,15 @@ async function setLayerColor(
 ): Promise<TimelineState> {
     const layer = await resolveLayer(layerId)
     await layer.setColor(colorValue)
+    return getState()
+}
+
+async function renameLayer(
+    layerId: number,
+    name: string
+): Promise<TimelineState> {
+    const layer = await resolveLayer(layerId)
+    await layer.setName(name)
     return getState()
 }
 

@@ -22,6 +22,8 @@ export const timelineSetLayerVisibility = (layerId: number, visible: boolean) =>
     timelineService.setLayerVisibility(layerId, visible)
 export const timelineSetLayerColor = (layerId: number, colorValue: string) =>
     timelineService.setLayerColor(layerId, colorValue)
+export const timelineRenameLayer = (layerId: number, name: string) =>
+    timelineService.renameLayer(layerId, name)
 export const timelineInsertEmptyFrameAfter = (layerId: number) =>
     timelineService.insertEmptyFrameAfter(layerId)
 export const timelineDuplicateFrame = (layerId: number) =>
