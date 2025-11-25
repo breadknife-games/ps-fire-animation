@@ -76,7 +76,7 @@
 
     $effect(() => {
         timelinePanelState.expandedRowHeight = Math.max(
-            timelinePanelState.collapsedRowHeight + 20,
+            timelinePanelState.collapsedRowHeight * 1.5,
             Math.max(10, timelinePanelState.frameWidth - 12) /
                 Math.max(0.25, aspectRatio) +
                 16
@@ -115,9 +115,9 @@
     const frameWidthMin = $derived(
         Math.max(
             10,
-            timelinePanelState.collapsedRowHeight *
-                Math.max(1, aspectRatio) *
-                1.5
+            (timelinePanelState.collapsedRowHeight * 1.5 - 16) *
+                Math.max(0.25, aspectRatio) +
+                12
         )
     )
     const frameWidthMax = 320
