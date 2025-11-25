@@ -496,7 +496,7 @@ async function normalizeLayersRecursive(
                 await PSTimeline.normalizeFrame(frame.id)
 
                 // Rename frame to sensible name: "GroupName 1", "GroupName 2", etc.
-                const newName = `${layer.name} | ${i + 1}`
+                const newName = `${layer.name} - ${i + 1}`
                 console.log(
                     `[normalizeLayersRecursive] Renaming frame to "${newName}"`
                 )
