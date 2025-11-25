@@ -179,10 +179,17 @@ async function getLayerThumbnail(
     console.log('resolving layer', layerId)
     const layer = await resolveLayer(layerId)
 
+    // Calculate target size maintaining document aspect ratio
+    const aspectRatio = layer.document.width / layer.document.height
+    const targetWidth =
+        aspectRatio >= 1 ? resolution : Math.round(resolution * aspectRatio)
+    const targetHeight =
+        aspectRatio >= 1 ? Math.round(resolution / aspectRatio) : resolution
+
     console.log('getting base64 image data', layerId)
     const data = (await layer.getBase64ImageData(
-        resolution,
-        resolution
+        targetWidth,
+        targetHeight
     )) satisfies FireLayerTrimmedBase64ImageData
 
     console.log('returning layer thumbnail', layerId)

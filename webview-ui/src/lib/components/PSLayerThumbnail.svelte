@@ -11,40 +11,30 @@
         height?: number
     }>()
 
-    let x = $state(0)
-    let y = $state(0)
-    let imgWidth = $state(0)
-    let imgHeight = $state(0)
-
-    $effect(() => {
-        if (!data || !data.fullWidth || !data.fullHeight) {
-            x = 0
-            y = 0
-            imgWidth = 0
-            imgHeight = 0
-            return
-        }
-
-        const xPercent = data.x / data.fullWidth
-        const yPercent = data.y / data.fullHeight
-        const widthPercent = data.width / data.fullWidth
-        const heightPercent = data.height / data.fullHeight
-        x = Math.floor(xPercent * width)
-        y = Math.floor(yPercent * height)
-        imgWidth = Math.floor(widthPercent * width)
-        imgHeight = Math.floor(heightPercent * height)
-    })
+    // Calculate position as percentages of the container
+    let leftPercent = $derived(
+        data?.fullWidth ? (data.x / data.fullWidth) * 100 : 0
+    )
+    let topPercent = $derived(
+        data?.fullHeight ? (data.y / data.fullHeight) * 100 : 0
+    )
+    let widthPercent = $derived(
+        data?.fullWidth ? (data.width / data.fullWidth) * 100 : 0
+    )
+    let heightPercent = $derived(
+        data?.fullHeight ? (data.height / data.fullHeight) * 100 : 0
+    )
 </script>
 
 <div
-    class="relative flex h-full w-full items-start justify-start overflow-hidden rounded bg-white"
-    style={`max-width: ${width}px; max-height: ${height}px;`}>
-    {#if data}
+    class="relative overflow-hidden rounded bg-white"
+    style={`width: ${width}px; height: ${height}px;`}>
+    {#if data?.base64}
         <img
             src={`data:image/jpeg;base64,${data.base64}`}
             alt="frame preview"
-            class="absolute rounded-sm"
-            style={`left: ${x}px; top: ${y}px; width: ${imgWidth}px; height: ${imgHeight}px;`}
+            class="absolute"
+            style={`left: ${leftPercent}%; top: ${topPercent}%; width: ${widthPercent}%; height: ${heightPercent}%;`}
             draggable="false" />
     {/if}
 </div>
