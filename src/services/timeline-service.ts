@@ -34,7 +34,9 @@ export const timelineService = {
     getPreviewState,
     toggleOnionSkin,
     openOnionSkinSettings,
-    moveLayer
+    moveLayer,
+    moveFrameLeft,
+    moveFrameRight
 }
 
 async function getState(): Promise<TimelineState> {
@@ -310,5 +312,41 @@ async function moveLayer(
 ): Promise<TimelineState> {
     const document = FireDocument.current
     await document.moveLayer(layerId, targetLayerId, position)
+    return getState()
+}
+
+async function moveFrameLeft(layerId: number): Promise<TimelineState> {
+    const layer = await resolveLayer(layerId)
+    const parent = layer.parent
+    if (!parent || parent.type !== FireLayerType.Video) return getState()
+
+    // Timeline displays frames in reverse order from layer stack
+    // "Left" in timeline = earlier = move "below" in layer stack
+    const siblings = parent.children as FireLayer[]
+    const currentIndex = siblings.findIndex(s => s.id === layerId)
+    
+    // Can't move left if already at the end (leftmost in timeline)
+    if (currentIndex >= siblings.length - 1) return getState()
+
+    const targetSibling = siblings[currentIndex + 1]
+    await layer.document.moveLayer(layerId, targetSibling.id, 'below')
+    return getState()
+}
+
+async function moveFrameRight(layerId: number): Promise<TimelineState> {
+    const layer = await resolveLayer(layerId)
+    const parent = layer.parent
+    if (!parent || parent.type !== FireLayerType.Video) return getState()
+
+    // Timeline displays frames in reverse order from layer stack
+    // "Right" in timeline = later = move "above" in layer stack
+    const siblings = parent.children as FireLayer[]
+    const currentIndex = siblings.findIndex(s => s.id === layerId)
+    
+    // Can't move right if already at the start (rightmost in timeline)
+    if (currentIndex <= 0) return getState()
+
+    const targetSibling = siblings[currentIndex - 1]
+    await layer.document.moveLayer(layerId, targetSibling.id, 'above')
     return getState()
 }

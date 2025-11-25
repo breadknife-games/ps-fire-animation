@@ -50,4 +50,8 @@ export const timelineMoveLayer = (
     targetLayerId: number,
     position: 'above' | 'below' | 'inside'
 ) => timelineService.moveLayer(layerId, targetLayerId, position)
+export const timelineMoveFrameLeft = (layerId: number) =>
+    timelineService.moveFrameLeft(layerId)
+export const timelineMoveFrameRight = (layerId: number) =>
+    timelineService.moveFrameRight(layerId)
 export const previewGetState = () => timelineService.getPreviewState()

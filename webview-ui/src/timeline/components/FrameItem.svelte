@@ -10,7 +10,9 @@
         insertFrameAfter,
         duplicateFrameBefore,
         duplicateFrameAfter,
-        deleteFrame
+        deleteFrame,
+        moveFrameLeft,
+        moveFrameRight
     } from '../../stores/timelineStore.svelte'
 
     const emptyThumbnail: ThumbnailState = {
@@ -118,6 +120,15 @@
         {
             label: 'Duplicate After',
             action: () => duplicateFrameAfter(resolvedFrame.id)
+        },
+        { label: '', action: () => {}, separator: true },
+        {
+            label: 'Move Left',
+            action: () => moveFrameLeft(resolvedFrame.id)
+        },
+        {
+            label: 'Move Right',
+            action: () => moveFrameRight(resolvedFrame.id)
         },
         { label: '', action: () => {}, separator: true },
         {

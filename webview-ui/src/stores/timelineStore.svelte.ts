@@ -83,6 +83,18 @@ export async function deleteFrame(layerId: number) {
     timelineState.state = state
 }
 
+export async function moveFrameLeft(layerId: number) {
+    const api = getApiClient()
+    const state = await api.timelineMoveFrameLeft(layerId)
+    timelineState.state = state
+}
+
+export async function moveFrameRight(layerId: number) {
+    const api = getApiClient()
+    const state = await api.timelineMoveFrameRight(layerId)
+    timelineState.state = state
+}
+
 export async function deleteLayer(layerId: number) {
     const api = getApiClient()
     const state = await api.timelineDeleteLayer(layerId)
