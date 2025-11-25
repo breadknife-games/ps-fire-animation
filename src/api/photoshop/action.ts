@@ -1,4 +1,4 @@
-import ps from 'photoshop'
+import { photoshop as ps } from '../../globals'
 
 export class ActionTarget {
     constructor(private _target: any) {}

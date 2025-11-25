@@ -1,40 +1,25 @@
-/*noinspection CssUnresolvedCustomProperty*/
-:root {
-    --color-surface-1: var(--uxp-host-background-color);
-    --color-border: var(--color-surface-4);
-    --color-playhead: #346bff;
-    --color-playhead-line: #aa1111;
-    --header-height: 30px;
+html,
+body {
+  height: 100vh;
+  background-color: #242424;
 }
 
-svg {
-    fill: var(--icon-fill);
+main {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  > * {
+    margin-top: 1rem;
+  }
 }
 
-/*noinspection CssInvalidMediaFeature*/
-@media (prefers-color-scheme: darkest) {
-    :root {
-        --icon-fill: #aaaaaa;
-        --icon-hover-fill: #eeeeee;
-        --color-surface-2: #2f2f2f;
-        --color-surface-3: #2b2b2b;
-        --color-surface-4: #262626;
-        --color-scrollbar: #292929;
-        --color-button-hover: #262626;
-        --color-button-active: #1f1f1f;
-    }
-}
-
-/*noinspection CssInvalidMediaFeature*/
-@media (prefers-color-scheme: dark) {
-    :root {
-        --icon-fill: #cccccc;
-        --icon-hover-fill: #eeeeee;
-        --color-surface-2: #555555;
-        --color-surface-3: #4d4d4d;
-        --color-surface-4: #3e3e3e;
-        --color-scrollbar: #4a4a4a;
-        --color-button-hover: #3e3e3e;
-        --color-button-active: #333333;
-    }
+.webview-ui {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  border: none;
+  background-color: #222222;
 }

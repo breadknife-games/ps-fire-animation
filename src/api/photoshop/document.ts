@@ -1,7 +1,8 @@
-import ps from 'photoshop'
-import { Document } from 'photoshop/dom/Document'
-import { FireLayer, PSLayer, psLayerProperties } from './layer'
-import { ActionDescriptor } from 'photoshop/dom/CoreModules'
+import { photoshop as ps } from '../../globals'
+import type { Document } from 'photoshop/dom/Document'
+import { FireLayer, psLayerProperties } from './layer'
+import type { PSLayer } from './layer'
+import type { ActionDescriptor } from 'photoshop/dom/CoreModules'
 
 export class FireDocument {
     public readonly id: number
@@ -54,7 +55,7 @@ export class FireDocument {
             }
         ) as unknown as PSLayer[]
 
-        return new FireLayer(this, res[0], [], selectedLayerIds)
+        return new FireLayer(this, null, res[0], [], selectedLayerIds)
     }
 
     getLayers(): FireLayer[] {
@@ -91,7 +92,7 @@ export class FireDocument {
         const allLayers = (res[0].list as PSLayer[]).reverse()
         const rootLayers = allLayers.filter(layer => layer.parentLayerID === -1)
         return rootLayers.map(
-            layer => new FireLayer(this, layer, allLayers, selections)
+            layer => new FireLayer(this, null, layer, allLayers, selections)
         )
     }
 

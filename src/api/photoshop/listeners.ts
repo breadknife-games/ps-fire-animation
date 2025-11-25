@@ -1,4 +1,4 @@
-import ps from 'photoshop'
+import { photoshop as ps } from '../../globals'
 
 interface ToolModalStateChangedDescriptor {
     state: {
@@ -62,6 +62,17 @@ async function addListener<T>(
 }
 
 export class FireListeners {
+    private static historyStateListeners: (() => void)[] = []
+    private static selectListeners: ((layerId: number[]) => void)[] = []
+
+    static invokeHistoryStateListeners() {
+        for (const listener of this.historyStateListeners) listener()
+    }
+
+    static invokeSelectListeners(layerId: number[]) {
+        for (const listener of this.selectListeners) listener(layerId)
+    }
+
     static async addPaintEndListener(callback: () => void): Promise<void> {
         await addListener<ToolModalStateChangedDescriptor>(
             'toolModalStateChanged',
@@ -76,15 +87,20 @@ export class FireListeners {
     }
 
     static async addHistoryStateListener(callback: () => void): Promise<void> {
+        this.historyStateListeners.push(callback)
+
         // For some reason photoshop sometimes sends duplicate history state change events?
         // So make sure we only call the callback once per change
         let lastId = 0
         await addListener<HistoryStateChangedDescriptor>(
             'historyStateChanged',
             descriptor => {
+                console.log('historyStateChanged', descriptor.ID)
                 if (descriptor.ID !== lastId) {
                     lastId = descriptor.ID
                     callback()
+                } else {
+                    lastId = 0
                 }
             }
         )
@@ -93,6 +109,8 @@ export class FireListeners {
     static async addLayerSelectListener(
         callback: (layerId: number[]) => void
     ): Promise<void> {
+        this.selectListeners.push(callback)
+
         await addListener<SelectDescriptor>('select', descriptor => {
             if (descriptor._target[0]._ref === 'layer')
                 callback(descriptor.layerID!)

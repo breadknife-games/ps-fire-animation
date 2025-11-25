@@ -10,8 +10,8 @@ const prettierConfig = {
     arrowParens: 'avoid',
 
     plugins: ['prettier-plugin-svelte'],
-    pluginSearchDirs: ["."],
-    overrides: [{"files": "*.svelte", "options": {"parser": "svelte"}}]
+    pluginSearchDirs: ['.'],
+    overrides: [{ files: '*.svelte', options: { parser: 'svelte' } }]
 }
 
 export default prettierConfig

@@ -1,4 +1,4 @@
-import ps from 'photoshop'
+import { photoshop as ps } from '../../globals'
 import { ActionTarget } from './action'
 import { FireDocument } from './document'
 
@@ -45,13 +45,22 @@ export interface FireLayerColor {
 }
 
 export interface FireLayerTrimmedImageData {
-    base64: string
     x: number
     y: number
     width: number
     height: number
     fullWidth: number
     fullHeight: number
+}
+
+export interface FireLayerTrimmedBase64ImageData
+    extends FireLayerTrimmedImageData {
+    base64: string
+}
+
+export interface FireLayerTrimmedUint8ArrayImageData
+    extends FireLayerTrimmedImageData {
+    data: Uint8Array
 }
 
 export const layerColors = {
@@ -83,6 +92,7 @@ export class FireLayer {
 
     constructor(
         public readonly document: FireDocument,
+        public readonly parent: FireLayer | null,
         layer: PSLayer,
         allLayers: PSLayer[],
         selectedLayerIds: number[]
@@ -93,7 +103,16 @@ export class FireLayer {
                     l.parentLayerID === layer.layerID &&
                     l.layerKind !== PSLayerKind.GroupEnd
             )
-            .map(l => new FireLayer(document, l, allLayers, selectedLayerIds))
+            .map(
+                l =>
+                    new FireLayer(
+                        document,
+                        this,
+                        l,
+                        allLayers,
+                        selectedLayerIds
+                    )
+            )
 
         this.id = layer.layerID
         this.name = layer.name
@@ -164,7 +183,8 @@ export class FireLayer {
     async getBase64ImageData(
         width: number,
         height: number
-    ): Promise<FireLayerTrimmedImageData> {
+    ): Promise<FireLayerTrimmedBase64ImageData> {
+        console.log('THE EXECUTE AS MODAL IS BEING CALLED')
         return ps.core.executeAsModal(
             async () => {
                 let imageObj
@@ -176,7 +196,7 @@ export class FireLayer {
                         applyAlpha: true
                     })
                 } catch (e) {
-                    // If there are no pixels in the error, this will throw
+                    // If there are no pixels in the area, this will throw
                     return {
                         base64: '',
                         x: 0,
@@ -193,8 +213,63 @@ export class FireLayer {
                     base64: true
                 })) as string
 
+                await imageObj.imageData.dispose()
+
                 return {
                     base64,
+                    x: imageObj.sourceBounds.left,
+                    y: imageObj.sourceBounds.top,
+                    width:
+                        imageObj.sourceBounds.right -
+                        imageObj.sourceBounds.left,
+                    height:
+                        imageObj.sourceBounds.bottom -
+                        imageObj.sourceBounds.top,
+                    fullWidth:
+                        this.document.width / Math.pow(2, imageObj.level),
+                    fullHeight:
+                        this.document.height / Math.pow(2, imageObj.level)
+                }
+            },
+            { commandName: 'getLayerImageData' }
+        )
+    }
+
+    async getUint8ArrayImageData(
+        width: number,
+        height: number
+    ): Promise<FireLayerTrimmedUint8ArrayImageData> {
+        return ps.core.executeAsModal(
+            async () => {
+                let imageObj
+                try {
+                    imageObj = await ps.imaging.getPixels({
+                        layerID: this.id,
+                        targetSize: { width, height },
+                        componentSize: 8,
+                        applyAlpha: false
+                    })
+                } catch (e) {
+                    // If there are no pixels in the area, this will throw
+                    return {
+                        data: new Uint8Array(),
+                        x: 0,
+                        y: 0,
+                        width: 0,
+                        height: 0,
+                        fullWidth: 0,
+                        fullHeight: 0
+                    }
+                }
+
+                const data = (await imageObj.imageData.getData({
+                    chunky: true
+                })) as Uint8Array
+
+                await imageObj.imageData.dispose()
+
+                return {
+                    data,
                     x: imageObj.sourceBounds.left,
                     y: imageObj.sourceBounds.top,
                     width:

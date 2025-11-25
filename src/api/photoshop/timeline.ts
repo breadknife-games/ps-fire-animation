@@ -1,4 +1,4 @@
-import ps from 'photoshop'
+import { photoshop as ps } from '../../globals'
 import { ActionTarget } from './action'
 
 interface Timecode {
