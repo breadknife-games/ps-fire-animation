@@ -26,11 +26,13 @@
         )
     )
 
+    const isVideo = $derived(row.type === 'video')
     const hasFrames = $derived(row.frames.length > 0)
+    const showButtons = $derived(isVideo && hasFrames)
 
     async function handleInsert(event: MouseEvent) {
         event.stopPropagation()
-        if (!hasFrames) return
+        if (!showButtons) return
         const anchor = row.frames.at(-1)?.id
         if (!anchor) return
         await insertFrameAfter(anchor)
@@ -38,7 +40,7 @@
 
     async function handleDuplicate(event: MouseEvent) {
         event.stopPropagation()
-        if (!hasFrames) return
+        if (!showButtons) return
         const anchor = row.frames.at(-1)?.id
         if (!anchor) return
         await duplicateFrameAfter(anchor)
@@ -49,7 +51,7 @@
     <div
         class="flex items-center justify-left border-b border-timeline-border bg-timeline-surface-1 pl-2"
         style={`height: ${rowHeight}px; min-height: ${rowHeight}px;`}>
-        {#if hasFrames}
+        {#if showButtons}
             <button
                 class="flex h-6 w-6 items-center justify-center rounded border border-transparent text-timeline-muted transition hover:border-timeline-border hover:bg-timeline-button-hover"
                 type="button"
