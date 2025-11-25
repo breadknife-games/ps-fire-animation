@@ -37,6 +37,7 @@ export const timelineService = {
     moveLayer,
     moveFrameLeft,
     moveFrameRight,
+    createLayer,
     createGroup,
     createVideoGroup,
     normalizeTimeline
@@ -337,6 +338,19 @@ async function moveFrameRight(layerId: number): Promise<TimelineState> {
 
     const targetSibling = siblings[currentIndex - 1]
     await layer.document.moveLayer(layerId, targetSibling.id, 'above')
+    return getState()
+}
+
+async function createLayer(
+    anchorLayerId: number,
+    position: 'above' | 'below'
+): Promise<TimelineState> {
+    const document = FireDocument.current
+    const newLayer = await document.createLayer()
+    // Move the new layer relative to the anchor layer
+    await document.moveLayer(newLayer.id, anchorLayerId, position)
+    // Normalize the layer to span the full timeline (5000 frames)
+    await PSTimeline.setLayerLength(newLayer.id, 5000)
     return getState()
 }
 

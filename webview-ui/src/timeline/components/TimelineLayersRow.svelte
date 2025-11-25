@@ -19,6 +19,7 @@
         setLayerColor,
         renameLayer,
         deleteLayer,
+        createLayer,
         createGroup,
         createVideoGroup
     } from '../../stores/timelineStore.svelte'
@@ -243,11 +244,15 @@
 
     const contextMenuItems = $derived([
         {
+            label: 'New Layer',
+            action: () => createLayer(row.id, 'below')
+        },
+        {
             label: 'New Group',
             action: () => createGroup(row.id, 'below')
         },
         {
-            label: 'New Video Group',
+            label: 'New Frame Group',
             action: () => createVideoGroup(row.id, 'below')
         },
         {

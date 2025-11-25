@@ -54,6 +54,10 @@ export const timelineMoveFrameLeft = (layerId: number) =>
     timelineService.moveFrameLeft(layerId)
 export const timelineMoveFrameRight = (layerId: number) =>
     timelineService.moveFrameRight(layerId)
+export const timelineCreateLayer = (
+    anchorLayerId: number,
+    position: 'above' | 'below'
+) => timelineService.createLayer(anchorLayerId, position)
 export const timelineCreateGroup = (
     anchorLayerId: number,
     position: 'above' | 'below'

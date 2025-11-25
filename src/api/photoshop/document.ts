@@ -165,6 +165,29 @@ export class FireDocument {
     }
 
     /**
+     * Create a new empty pixel layer
+     * @param name - Optional name for the layer
+     * @returns The newly created layer
+     */
+    async createLayer(name?: string): Promise<FireLayer> {
+        await this.psDocument.suspendHistory(async () => {
+            await ps.action.batchPlay(
+                [
+                    {
+                        _obj: 'make',
+                        _target: [{ _ref: 'layer' }],
+                        ...(name ? { using: { _obj: 'layer', name } } : {})
+                    }
+                ],
+                {}
+            )
+        }, 'Create Layer')
+
+        const selections = this.getSelectedLayerIds()
+        return this.getLayerWithoutChildren(selections, selections[0])
+    }
+
+    /**
      * Create a new empty group (folder)
      * @param name - Optional name for the group
      * @returns The newly created group layer

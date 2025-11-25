@@ -174,6 +174,15 @@ export async function moveLayer(
     timelineState.state = state
 }
 
+export async function createLayer(
+    anchorLayerId: number,
+    position: 'above' | 'below'
+) {
+    const api = getApiClient()
+    const state = await api.timelineCreateLayer(anchorLayerId, position)
+    timelineState.state = state
+}
+
 export async function createGroup(
     anchorLayerId: number,
     position: 'above' | 'below'
