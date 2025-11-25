@@ -206,3 +206,9 @@ export async function normalizeTimeline() {
     const state = await api.timelineNormalize()
     timelineState.state = state
 }
+
+export async function createVideoTimeline() {
+    const api = getApiClient()
+    const state = await api.timelineCreateVideoTimeline()
+    timelineState.state = state
+}
