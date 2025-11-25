@@ -45,6 +45,23 @@ export const timelineService = {
 
 async function getState(): Promise<TimelineState> {
     const document = FireDocument.current
+    const timelineEnabled = PSTimeline.enabled
+
+    // If timeline is not enabled, return minimal state
+    if (!timelineEnabled) {
+        return {
+            documentId: document.id,
+            rows: [],
+            headIndex: 0,
+            frameRate: 24,
+            aspectRatio: document.aspectRatio,
+            selectedLayerIds: [],
+            thumbnailResolution: DEFAULT_THUMBNAIL_RESOLUTION,
+            timelineEnabled: false,
+            updatedAt: Date.now()
+        }
+    }
+
     const layers = document.getLayers()
     const selected = document.getSelectedLayerIds()
     const rows = layers.map(layer => serializeLayer(layer, selected))
@@ -60,7 +77,7 @@ async function getState(): Promise<TimelineState> {
         aspectRatio: document.aspectRatio,
         selectedLayerIds: selected,
         thumbnailResolution: DEFAULT_THUMBNAIL_RESOLUTION,
-        timelineEnabled: PSTimeline.enabled,
+        timelineEnabled: true,
         updatedAt: Date.now()
     }
 }

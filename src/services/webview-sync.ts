@@ -24,6 +24,10 @@ export async function bindTimelineWebview(api: WebviewAPI) {
     await FireListeners.addTimelineTimeChangeListener(async () => {
         await pushTimeline()
     })
+    await FireListeners.addSelectDocumentListener(async () => {
+        console.log('[webview-sync] Document switched, refreshing timeline')
+        await pushTimeline()
+    })
 
     // Auto-fix regular layers when created (set to 5000 length)
     await FireListeners.addLayerCreateListener(async layerId => {
