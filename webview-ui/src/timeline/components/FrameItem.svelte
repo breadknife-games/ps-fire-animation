@@ -77,15 +77,9 @@
     })
 
     $effect(() => {
-        const data = thumbnailState.data
-        if (data && data.fullWidth && data.fullHeight) {
-            const aspect = data.fullWidth / data.fullHeight || 1
-            thumbHeight = Math.max(0, height - 12)
-            thumbWidth = Math.max(0, thumbHeight * aspect)
-        } else {
-            thumbWidth = width
-            thumbHeight = height
-        }
+        const padding = selected ? 24 : 21
+        thumbHeight = Math.max(0, height - padding)
+        thumbWidth = Math.max(0, width - padding)
 
         if (thumbnailState.status === 'loaded') {
             hasLoaded = true
