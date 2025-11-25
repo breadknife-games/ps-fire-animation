@@ -191,3 +191,9 @@ export async function createVideoGroup(
     const state = await api.timelineCreateVideoGroup(anchorLayerId, position)
     timelineState.state = state
 }
+
+export async function normalizeTimeline() {
+    const api = getApiClient()
+    const state = await api.timelineNormalize()
+    timelineState.state = state
+}

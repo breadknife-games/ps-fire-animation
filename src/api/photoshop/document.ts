@@ -117,7 +117,7 @@ export class FireDocument {
                 ],
                 {}
             )
-        }, 'Create Layer')
+        }, 'Create Frame')
 
         const selections = this.getSelectedLayerIds()
         return this.getLayerWithoutChildren(selections, selections[0])
@@ -196,6 +196,20 @@ export class FireDocument {
         let videoGroupId: number | null = null
 
         await this.psDocument.suspendHistory(async () => {
+            const time = ps.action.batchPlay(
+                [
+                    {
+                        _obj: 'get',
+                        _target: [
+                            { _ref: 'property', _property: 'time' },
+                            { _ref: 'timeline' }
+                        ]
+                    }
+                ],
+                { synchronousExecution: true }
+            ) as unknown as { time: { frameRate: number } }[]
+            const frameRate = time[0]?.time?.frameRate || 30
+
             // First create the sceneSection (video group)
             const result = (await ps.action.batchPlay(
                 [
@@ -210,13 +224,30 @@ export class FireDocument {
 
             videoGroupId = result[0]?.layerID ?? this.getSelectedLayerIds()[0]
 
-            // Now create an empty frame layer inside the video group
-            // Since the video group is selected, the new layer goes inside it
+            // Create an empty frame layer inside and normalize it
             await ps.action.batchPlay(
                 [
                     {
                         _obj: 'make',
                         _target: [{ _ref: 'layer' }]
+                    },
+                    {
+                        _obj: 'moveInTime',
+                        timeOffset: {
+                            _obj: 'timecode',
+                            frame: -9999,
+                            frameRate,
+                            seconds: 0
+                        }
+                    },
+                    {
+                        _obj: 'moveOutTime',
+                        timeOffset: {
+                            _obj: 'timecode',
+                            frame: -9999,
+                            frameRate,
+                            seconds: 0
+                        }
                     }
                 ],
                 {}

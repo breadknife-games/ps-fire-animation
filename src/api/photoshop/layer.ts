@@ -126,7 +126,10 @@ export class FireLayer {
         if (layer.layerKind === PSLayerKind.Pixel) {
             this.type = FireLayerType.Layer
         } else if (layer.layerKind === PSLayerKind.Group) {
-            if (this.children.length > 0 && this.children.every(l => l.type === FireLayerType.Layer)) {
+            if (
+                this.children.length > 0 &&
+                this.children.every(l => l.type === FireLayerType.Layer)
+            ) {
                 this.type = FireLayerType.Video
             } else {
                 this.type = FireLayerType.Group
@@ -338,4 +341,47 @@ export class FireLayer {
             { commandName: 'getLayerImageData' }
         )
     }
+}
+
+// ============================================================================
+// Layer utility functions
+// ============================================================================
+
+/**
+ * Find a layer by ID in a layer tree
+ */
+export function findLayerById(
+    layers: ReadonlyArray<FireLayer>,
+    id: number
+): FireLayer | null {
+    for (const layer of layers) {
+        if (layer.id === id) return layer
+        if (layer.children?.length) {
+            const child = findLayerById(layer.children as FireLayer[], id)
+            if (child) return child
+        }
+    }
+    return null
+}
+
+/**
+ * Find a layer by ID and also return its parent
+ */
+export function findLayerWithParent(
+    layers: ReadonlyArray<FireLayer>,
+    id: number,
+    parent: FireLayer | null = null
+): { layer: FireLayer; parent: FireLayer | null } | null {
+    for (const layer of layers) {
+        if (layer.id === id) return { layer, parent }
+        if (layer.children?.length) {
+            const found = findLayerWithParent(
+                layer.children as FireLayer[],
+                id,
+                layer
+            )
+            if (found) return found
+        }
+    }
+    return null
 }

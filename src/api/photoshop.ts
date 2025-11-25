@@ -62,4 +62,5 @@ export const timelineCreateVideoGroup = (
     anchorLayerId: number,
     position: 'above' | 'below'
 ) => timelineService.createVideoGroup(anchorLayerId, position)
+export const timelineNormalize = () => timelineService.normalizeTimeline()
 export const previewGetState = () => timelineService.getPreviewState()

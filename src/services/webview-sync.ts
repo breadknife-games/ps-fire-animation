@@ -1,5 +1,8 @@
 import type { WebviewAPI } from '../../webview-ui/src/webview'
 import { FireListeners } from '../api/photoshop/listeners'
+import { FireDocument } from '../api/photoshop/document'
+import { FireLayerType, findLayerWithParent } from '../api/photoshop/layer'
+import { Timeline } from '../api/photoshop/timeline'
 import { timelineService } from './timeline-service'
 
 export async function bindTimelineWebview(api: WebviewAPI) {
@@ -20,6 +23,37 @@ export async function bindTimelineWebview(api: WebviewAPI) {
     await FireListeners.addLayerSelectListener(pushTimeline)
     await FireListeners.addTimelineTimeChangeListener(async () => {
         await pushTimeline()
+    })
+
+    // Auto-fix regular layers when created (set to 5000 length)
+    await FireListeners.addLayerCreateListener(async layerId => {
+        try {
+            const document = FireDocument.current
+            const layers = document.getLayers()
+            const result = findLayerWithParent(layers, layerId)
+
+            if (!result) {
+                console.log(
+                    `[webview-sync] Layer ${layerId} not found, skipping auto-fix`
+                )
+                return
+            }
+
+            const { layer, parent } = result
+
+            // Only fix regular layers that are NOT in a video group
+            if (
+                layer.type === FireLayerType.Layer &&
+                (!parent || parent.type !== FireLayerType.Video)
+            ) {
+                console.log(
+                    `[webview-sync] Auto-fixing regular layer "${layer.name}" (${layerId}) to 5000 length`
+                )
+                await Timeline.setLayerLength(layerId, 5000)
+            }
+        } catch (error) {
+            console.error('[webview-sync] Error auto-fixing layer:', error)
+        }
     })
 }
 

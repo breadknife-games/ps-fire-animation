@@ -7,7 +7,7 @@ import type {
     TimelineState
 } from '../shared/timeline'
 import { FireDocument } from '../api/photoshop/document'
-import { FireLayer, FireLayerType } from '../api/photoshop/layer'
+import { FireLayer, FireLayerType, findLayerById } from '../api/photoshop/layer'
 import type { FireLayerTrimmedBase64ImageData } from '../api/photoshop/layer'
 import { Timeline as PSTimeline } from '../api/photoshop/timeline'
 
@@ -38,7 +38,8 @@ export const timelineService = {
     moveFrameLeft,
     moveFrameRight,
     createGroup,
-    createVideoGroup
+    createVideoGroup,
+    normalizeTimeline
 }
 
 async function getState(): Promise<TimelineState> {
@@ -259,20 +260,6 @@ function mapLayerType(type: FireLayerType) {
     }
 }
 
-function findLayerById(
-    layers: ReadonlyArray<FireLayer>,
-    id: number
-): FireLayer | null {
-    for (const layer of layers) {
-        if (layer.id === id) return layer
-        if (layer.children) {
-            const child = findLayerById(layer.children as FireLayer[], id)
-            if (child) return child
-        }
-    }
-    return null
-}
-
 async function syncPlayheadFromLayer(layer: FireLayer) {
     const parent = layer.parent
     if (!parent || parent.type !== FireLayerType.Video) return
@@ -326,7 +313,7 @@ async function moveFrameLeft(layerId: number): Promise<TimelineState> {
     // "Left" in timeline = earlier = move "below" in layer stack
     const siblings = parent.children as FireLayer[]
     const currentIndex = siblings.findIndex(s => s.id === layerId)
-    
+
     // Can't move left if already at the end (leftmost in timeline)
     if (currentIndex >= siblings.length - 1) return getState()
 
@@ -344,7 +331,7 @@ async function moveFrameRight(layerId: number): Promise<TimelineState> {
     // "Right" in timeline = later = move "above" in layer stack
     const siblings = parent.children as FireLayer[]
     const currentIndex = siblings.findIndex(s => s.id === layerId)
-    
+
     // Can't move right if already at the start (rightmost in timeline)
     if (currentIndex <= 0) return getState()
 
@@ -373,4 +360,112 @@ async function createVideoGroup(
     // Move the new group relative to the anchor layer
     await document.moveLayer(newGroup.id, anchorLayerId, position)
     return getState()
+}
+
+/**
+ * Normalize the timeline to ensure:
+ * 1. All frames in video groups are exactly 1 frame long and contiguous (no gaps)
+ * 2. Regular layers span all frames
+ */
+async function normalizeTimeline(): Promise<TimelineState> {
+    console.log('[normalizeTimeline] Starting normalization...')
+    const document = FireDocument.current
+    const layers = document.getLayers()
+
+    console.log(
+        '[normalizeTimeline] Found layers:',
+        layers.map(l => ({
+            id: l.id,
+            name: l.name,
+            type: l.type,
+            childCount: l.children?.length ?? 0
+        }))
+    )
+
+    // Find the maximum frame count across all video groups
+    const maxFrames = findMaxFrameCount(layers)
+    console.log(
+        '[normalizeTimeline] Max frames across all video groups:',
+        maxFrames
+    )
+
+    if (maxFrames === 0) {
+        console.log(
+            '[normalizeTimeline] No frames to normalize, returning early'
+        )
+        return getState()
+    }
+
+    // Normalize all layers
+    await normalizeLayersRecursive(layers, maxFrames)
+
+    console.log('[normalizeTimeline] Normalization complete!')
+    return getState()
+}
+
+/**
+ * Find the maximum number of frames across all video groups
+ * This determines how long regular layers need to be
+ */
+function findMaxFrameCount(layers: ReadonlyArray<FireLayer>): number {
+    let max = 0
+    for (const layer of layers) {
+        if (layer.type === FireLayerType.Video) {
+            console.log(
+                `[findMaxFrameCount] Video group "${layer.name}" has ${layer.children.length} frames`
+            )
+            max = Math.max(max, layer.children.length)
+        } else if (layer.type === FireLayerType.Group) {
+            max = Math.max(
+                max,
+                findMaxFrameCount(layer.children as FireLayer[])
+            )
+        }
+    }
+    return max
+}
+
+/**
+ * Recursively normalize all layers
+ */
+async function normalizeLayersRecursive(
+    layers: ReadonlyArray<FireLayer>,
+    maxFrames: number
+): Promise<void> {
+    for (const layer of layers) {
+        console.log(
+            `[normalizeLayersRecursive] Processing layer: "${layer.name}" (id: ${layer.id}, type: ${layer.type})`
+        )
+
+        if (layer.type === FireLayerType.Video) {
+            // Normalize video group frames - each frame is 1 frame long, contiguous
+            // Frames are stored in reverse order (first frame is last in children array)
+            const frames = [...layer.children].reverse()
+            console.log(
+                `[normalizeLayersRecursive] Video group "${layer.name}" - normalizing ${frames.length} frames`
+            )
+            // Call normalizeFrame for each frame in order - they stack up automatically
+            for (const frame of frames) {
+                console.log(
+                    `[normalizeLayersRecursive] Normalizing frame "${frame.name}" (id: ${frame.id})`
+                )
+                await PSTimeline.normalizeFrame(frame.id)
+            }
+        } else if (layer.type === FireLayerType.Group) {
+            console.log(
+                `[normalizeLayersRecursive] Recursing into group "${layer.name}"`
+            )
+            // Recursively process group children
+            await normalizeLayersRecursive(
+                layer.children as FireLayer[],
+                maxFrames
+            )
+        } else if (layer.type === FireLayerType.Layer) {
+            console.log(
+                `[normalizeLayersRecursive] Setting regular layer "${layer.name}" (id: ${layer.id}) to length 5000`
+            )
+            // Regular layers always span 5000 frames to cover any animation
+            await PSTimeline.setLayerLength(layer.id, 5000)
+        }
+    }
 }

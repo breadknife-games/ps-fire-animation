@@ -52,6 +52,14 @@ interface NewDocumentDescriptor {
     documentID: number
 }
 
+interface MakeDescriptor {
+    _obj: 'make'
+    layerID?: number
+    new?: {
+        _obj: string
+    }
+}
+
 async function addListener<T>(
     event: string,
     callback: (descriptor: T) => void
@@ -170,6 +178,21 @@ export class FireListeners {
                     ps.app.activeDocument.activeLayers[0].name,
                 true
             )
+        })
+    }
+
+    static async addLayerCreateListener(
+        callback: (layerId: number) => void
+    ): Promise<void> {
+        await addListener<MakeDescriptor>('make', descriptor => {
+            // Only trigger for layer creation
+            if (descriptor.layerID) {
+                console.log(
+                    '[FireListeners] Layer created:',
+                    descriptor.layerID
+                )
+                callback(descriptor.layerID)
+            }
         })
     }
 }

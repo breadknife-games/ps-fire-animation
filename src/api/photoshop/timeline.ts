@@ -94,4 +94,129 @@ export class Timeline {
             { commandName: 'Open onion skin settings' }
         )
     }
+
+    /**
+     * Normalize a frame to be exactly 1 frame long, positioned right after the previous frame.
+     * Call this once for each frame in order (first to last).
+     * Steps: select, moveInTime -9999, moveOutTime -9999
+     */
+    static async normalizeFrame(layerId: number): Promise<void> {
+        const time = this.getCurrentTime()
+        console.log(`[Timeline.normalizeFrame] Normalizing frame ${layerId}`)
+
+        try {
+            await ps.core.executeAsModal(
+                async () => {
+                    // Select, moveInTime -9999, moveOutTime -9999
+                    await ps.action.batchPlay(
+                        [
+                            {
+                                _obj: 'select',
+                                _target: [{ _ref: 'layer', _id: layerId }],
+                                layerID: [layerId]
+                            },
+                            {
+                                _obj: 'moveInTime',
+                                timeOffset: {
+                                    _obj: 'timecode',
+                                    seconds: 0,
+                                    frame: -9999,
+                                    frameRate: time.frameRate
+                                }
+                            },
+                            {
+                                _obj: 'moveOutTime',
+                                timeOffset: {
+                                    _obj: 'timecode',
+                                    seconds: 0,
+                                    frame: -9999,
+                                    frameRate: time.frameRate
+                                }
+                            }
+                        ],
+                        {}
+                    )
+                },
+                { commandName: 'Normalize frame' }
+            )
+            console.log(
+                `[Timeline.normalizeFrame] Successfully normalized frame ${layerId}`
+            )
+        } catch (error) {
+            console.error(
+                `[Timeline.normalizeFrame] Error normalizing frame ${layerId}:`,
+                error
+            )
+            throw error
+        }
+    }
+
+    /**
+     * Set a layer to span a specific length starting from frame 0.
+     * Steps: select, moveInTime -9999, moveOutTime -9999, moveOutTime +length
+     */
+    static async setLayerLength(
+        layerId: number,
+        length: number
+    ): Promise<void> {
+        const time = this.getCurrentTime()
+        console.log(
+            `[Timeline.setLayerLength] Setting layer ${layerId} to length ${length}`
+        )
+
+        try {
+            await ps.core.executeAsModal(
+                async () => {
+                    // Select, moveInTime -9999, moveOutTime -9999, moveOutTime +length
+                    await ps.action.batchPlay(
+                        [
+                            {
+                                _obj: 'select',
+                                _target: [{ _ref: 'layer', _id: layerId }],
+                                layerID: [layerId]
+                            },
+                            {
+                                _obj: 'moveInTime',
+                                timeOffset: {
+                                    _obj: 'timecode',
+                                    seconds: 0,
+                                    frame: -9999,
+                                    frameRate: time.frameRate
+                                }
+                            },
+                            {
+                                _obj: 'moveOutTime',
+                                timeOffset: {
+                                    _obj: 'timecode',
+                                    seconds: 0,
+                                    frame: -9999,
+                                    frameRate: time.frameRate
+                                }
+                            },
+                            {
+                                _obj: 'moveOutTime',
+                                timeOffset: {
+                                    _obj: 'timecode',
+                                    seconds: 0,
+                                    frame: length - 1,
+                                    frameRate: time.frameRate
+                                }
+                            }
+                        ],
+                        {}
+                    )
+                },
+                { commandName: 'Set layer length' }
+            )
+            console.log(
+                `[Timeline.setLayerLength] Successfully set layer ${layerId} to length ${length}`
+            )
+        } catch (error) {
+            console.error(
+                `[Timeline.setLayerLength] Error setting layer ${layerId} length:`,
+                error
+            )
+            throw error
+        }
+    }
 }
