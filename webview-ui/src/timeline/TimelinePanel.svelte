@@ -374,14 +374,14 @@
             <div
                 class="sticky left-0 z-20 border-r border-timeline-border bg-timeline-surface-1"
                 style={`width: ${layerColWidth}px;`}>
-                {#each visibleRows as item (`${rowsTimestamp}-${item.row.id}`)}
+                {#each visibleRows as item}
                     <TimelineLayersRow row={item.row} depth={item.depth} />
                 {/each}
             </div>
 
             <div class="relative" style={`width: ${frameRowWidth}px;`}>
                 <TimelineCurrentFrameHighlight {draggingHeadIndex} />
-                {#each visibleRows as item (`${rowsTimestamp}-${item.row.id}`)}
+                {#each visibleRows as item}
                     <TimelineFramesRow
                         row={item.row}
                         {frameRowWidth}
@@ -392,7 +392,7 @@
             <div
                 class="sticky right-0 z-20 border-l border-timeline-border bg-timeline-surface-1"
                 style={`width: ${addFrameColWidth}px;`}>
-                {#each visibleRows as item (`${rowsTimestamp}-${item.row.id}`)}
+                {#each visibleRows as item}
                     <TimelineAddFrameRow row={item.row} />
                 {/each}
             </div>
