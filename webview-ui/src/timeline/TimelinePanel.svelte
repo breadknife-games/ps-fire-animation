@@ -379,7 +379,9 @@
                 {/each}
             </div>
 
-            <div class="relative" style={`width: ${frameRowWidth}px;`}>
+            <div
+                class="relative flex-1"
+                style={`min-width: ${frameRowWidth}px;`}>
                 <TimelineCurrentFrameHighlight {draggingHeadIndex} />
                 {#each visibleRows as item}
                     <TimelineFramesRow

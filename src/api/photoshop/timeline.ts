@@ -17,6 +17,23 @@ export class Timeline {
         return this._target.getProperty<boolean>('enabled')
     }
 
+    static async createVideoTimeline(): Promise<void> {
+        await ps.core.executeAsModal(
+            async () => {
+                await ps.action.batchPlay(
+                    [
+                        {
+                            _obj: 'makeTimeline',
+                            _isCommand: true
+                        }
+                    ],
+                    {}
+                )
+            },
+            { commandName: 'Create video timeline' }
+        )
+    }
+
     static getCurrentTime(): Timecode {
         return this._target.getProperty<Timecode>('time')
     }

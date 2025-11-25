@@ -40,7 +40,8 @@ export const timelineService = {
     createLayer,
     createGroup,
     createVideoGroup,
-    normalizeTimeline
+    normalizeTimeline,
+    createVideoTimeline
 }
 
 async function getState(): Promise<TimelineState> {
@@ -420,18 +421,21 @@ async function normalizeTimeline(): Promise<TimelineState> {
         maxFrames
     )
 
-    if (maxFrames === 0) {
-        console.log(
-            '[normalizeTimeline] No frames to normalize, returning early'
-        )
-        return getState()
-    }
-
-    // Normalize all layers
+    // Normalize all layers (even if no video groups, we still need to extend regular layers)
     await normalizeLayersRecursive(layers, maxFrames)
 
     console.log('[normalizeTimeline] Normalization complete!')
     return getState()
+}
+
+/**
+ * Create a video timeline for the current document and normalize it
+ */
+async function createVideoTimeline(): Promise<TimelineState> {
+    console.log('[createVideoTimeline] Creating video timeline...')
+    await PSTimeline.createVideoTimeline()
+    console.log('[createVideoTimeline] Video timeline created, normalizing...')
+    return normalizeTimeline()
 }
 
 /**
