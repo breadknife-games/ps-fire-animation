@@ -105,20 +105,20 @@
 
     const contextMenuItems = $derived([
         {
-            label: 'Insert Before',
+            label: 'Insert Left',
             action: () => insertFrameBefore(resolvedFrame.id)
         },
         {
-            label: 'Insert After',
+            label: 'Insert Right',
             action: () => insertFrameAfter(resolvedFrame.id)
         },
         { label: '', action: () => {}, separator: true },
         {
-            label: 'Duplicate Before',
+            label: 'Duplicate Left',
             action: () => duplicateFrameBefore(resolvedFrame.id)
         },
         {
-            label: 'Duplicate After',
+            label: 'Duplicate Right',
             action: () => duplicateFrameAfter(resolvedFrame.id)
         },
         { label: '', action: () => {}, separator: true },
