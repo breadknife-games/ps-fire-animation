@@ -36,7 +36,9 @@ export const timelineService = {
     openOnionSkinSettings,
     moveLayer,
     moveFrameLeft,
-    moveFrameRight
+    moveFrameRight,
+    createGroup,
+    createVideoGroup
 }
 
 async function getState(): Promise<TimelineState> {
@@ -348,5 +350,27 @@ async function moveFrameRight(layerId: number): Promise<TimelineState> {
 
     const targetSibling = siblings[currentIndex - 1]
     await layer.document.moveLayer(layerId, targetSibling.id, 'above')
+    return getState()
+}
+
+async function createGroup(
+    anchorLayerId: number,
+    position: 'above' | 'below'
+): Promise<TimelineState> {
+    const document = FireDocument.current
+    const newGroup = await document.createGroup()
+    // Move the new group relative to the anchor layer
+    await document.moveLayer(newGroup.id, anchorLayerId, position)
+    return getState()
+}
+
+async function createVideoGroup(
+    anchorLayerId: number,
+    position: 'above' | 'below'
+): Promise<TimelineState> {
+    const document = FireDocument.current
+    const newGroup = await document.createVideoGroup()
+    // Move the new group relative to the anchor layer
+    await document.moveLayer(newGroup.id, anchorLayerId, position)
     return getState()
 }

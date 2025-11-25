@@ -54,4 +54,12 @@ export const timelineMoveFrameLeft = (layerId: number) =>
     timelineService.moveFrameLeft(layerId)
 export const timelineMoveFrameRight = (layerId: number) =>
     timelineService.moveFrameRight(layerId)
+export const timelineCreateGroup = (
+    anchorLayerId: number,
+    position: 'above' | 'below'
+) => timelineService.createGroup(anchorLayerId, position)
+export const timelineCreateVideoGroup = (
+    anchorLayerId: number,
+    position: 'above' | 'below'
+) => timelineService.createVideoGroup(anchorLayerId, position)
 export const previewGetState = () => timelineService.getPreviewState()

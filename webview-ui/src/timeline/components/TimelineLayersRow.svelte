@@ -18,7 +18,9 @@
         toggleRowVisibility,
         setLayerColor,
         renameLayer,
-        deleteLayer
+        deleteLayer,
+        createGroup,
+        createVideoGroup
     } from '../../stores/timelineStore.svelte'
 
     const { row, depth = 0 } = $props<{
@@ -240,6 +242,19 @@
     let contextMenuY = $state(0)
 
     const contextMenuItems = $derived([
+        {
+            label: 'New Group',
+            action: () => createGroup(row.id, 'below')
+        },
+        {
+            label: 'New Video Group',
+            action: () => createVideoGroup(row.id, 'below')
+        },
+        {
+            label: '',
+            action: () => {},
+            separator: true
+        },
         {
             label: 'Delete',
             action: () => deleteLayer(row.id)

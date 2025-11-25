@@ -165,6 +165,70 @@ export class FireDocument {
     }
 
     /**
+     * Create a new empty group (folder)
+     * @param name - Optional name for the group
+     * @returns The newly created group layer
+     */
+    async createGroup(name?: string): Promise<FireLayer> {
+        await this.psDocument.suspendHistory(async () => {
+            await ps.action.batchPlay(
+                [
+                    {
+                        _obj: 'make',
+                        _target: [{ _ref: 'layerSection' }],
+                        ...(name ? { name } : {})
+                    }
+                ],
+                {}
+            )
+        }, 'Create Group')
+
+        const selections = this.getSelectedLayerIds()
+        return this.getLayerWithoutChildren(selections, selections[0])
+    }
+
+    /**
+     * Create a new video group with a default empty frame inside
+     * @param name - Optional name for the video group
+     * @returns The newly created video group layer
+     */
+    async createVideoGroup(name?: string): Promise<FireLayer> {
+        let videoGroupId: number | null = null
+
+        await this.psDocument.suspendHistory(async () => {
+            // First create the sceneSection (video group)
+            const result = (await ps.action.batchPlay(
+                [
+                    {
+                        _obj: 'make',
+                        _target: [{ _ref: 'sceneSection' }],
+                        ...(name ? { name } : {})
+                    }
+                ],
+                {}
+            )) as { layerID?: number }[]
+
+            videoGroupId = result[0]?.layerID ?? this.getSelectedLayerIds()[0]
+
+            // Now create an empty frame layer inside the video group
+            // Since the video group is selected, the new layer goes inside it
+            await ps.action.batchPlay(
+                [
+                    {
+                        _obj: 'make',
+                        _target: [{ _ref: 'layer' }]
+                    }
+                ],
+                {}
+            )
+        }, 'Create Video Group')
+
+        const selections = this.getSelectedLayerIds()
+        const selectedId = videoGroupId ?? selections[0]
+        return this.getLayerWithoutChildren(selections, selectedId)
+    }
+
+    /**
      * Move a layer to a new position relative to a target layer
      * @param layerId - The layer to move
      * @param targetLayerId - The reference layer for placement
@@ -175,10 +239,7 @@ export class FireDocument {
         targetLayerId: number,
         position: 'above' | 'below' | 'inside'
     ): Promise<void> {
-        const findLayerById = (
-            layers: any[],
-            id: number
-        ): any | null => {
+        const findLayerById = (layers: any[], id: number): any | null => {
             for (const layer of layers) {
                 if (layer.id === id) return layer
                 if (layer.layers) {
@@ -193,7 +254,10 @@ export class FireDocument {
             async () => {
                 const doc = this.psDocument
                 const layerToMove = findLayerById([...doc.layers], layerId)
-                const targetLayer = findLayerById([...doc.layers], targetLayerId)
+                const targetLayer = findLayerById(
+                    [...doc.layers],
+                    targetLayerId
+                )
 
                 if (!layerToMove || !targetLayer) {
                     console.error('Layer not found', { layerId, targetLayerId })
@@ -213,13 +277,22 @@ export class FireDocument {
                 if (position === 'inside') {
                     // Move layer into a group using PLACEINSIDE
                     console.log('Moving inside group using PLACEINSIDE')
-                    layerToMove.move(targetLayer, ps.constants.ElementPlacement.PLACEINSIDE)
+                    layerToMove.move(
+                        targetLayer,
+                        ps.constants.ElementPlacement.PLACEINSIDE
+                    )
                 } else if (position === 'above') {
                     // Move layer above target
-                    layerToMove.move(targetLayer, ps.constants.ElementPlacement.PLACEBEFORE)
+                    layerToMove.move(
+                        targetLayer,
+                        ps.constants.ElementPlacement.PLACEBEFORE
+                    )
                 } else {
                     // Move layer below target
-                    layerToMove.move(targetLayer, ps.constants.ElementPlacement.PLACEAFTER)
+                    layerToMove.move(
+                        targetLayer,
+                        ps.constants.ElementPlacement.PLACEAFTER
+                    )
                 }
             },
             { commandName: 'Move Layer' }

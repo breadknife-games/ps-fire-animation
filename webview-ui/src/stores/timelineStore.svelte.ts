@@ -173,3 +173,21 @@ export async function moveLayer(
     const state = await api.timelineMoveLayer(layerId, targetLayerId, position)
     timelineState.state = state
 }
+
+export async function createGroup(
+    anchorLayerId: number,
+    position: 'above' | 'below'
+) {
+    const api = getApiClient()
+    const state = await api.timelineCreateGroup(anchorLayerId, position)
+    timelineState.state = state
+}
+
+export async function createVideoGroup(
+    anchorLayerId: number,
+    position: 'above' | 'below'
+) {
+    const api = getApiClient()
+    const state = await api.timelineCreateVideoGroup(anchorLayerId, position)
+    timelineState.state = state
+}
