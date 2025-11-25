@@ -315,7 +315,12 @@
             style={`padding-left: calc(${indent} + 0.25rem);`}>
             {#if isFolder || isGroup || row.frames.length}
                 <div class="shrink-0">
-                    <RowExpander {expanded} onToggle={handleToggle} />
+                    <RowExpander
+                        {expanded}
+                        expanderType={isFolder || isGroup
+                            ? 'disclosure'
+                            : 'chevron'}
+                        onToggle={handleToggle} />
                 </div>
             {:else}
                 <div class="w-5"></div>
