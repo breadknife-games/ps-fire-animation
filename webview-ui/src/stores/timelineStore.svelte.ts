@@ -41,6 +41,12 @@ export async function toggleRowVisibility(layerId: number, visible: boolean) {
     timelineState.state = state
 }
 
+export async function setLayerColor(layerId: number, colorValue: string) {
+    const api = getApiClient()
+    const state = await api.timelineSetLayerColor(layerId, colorValue)
+    timelineState.state = state
+}
+
 export async function insertFrameAfter(layerId: number) {
     const api = getApiClient()
     const state = await api.timelineInsertEmptyFrameAfter(layerId)

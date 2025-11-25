@@ -180,6 +180,32 @@ export class FireLayer {
         }, 'Set Layer Visibility')
     }
 
+    async setColor(colorValue: string) {
+        await this.document.suspendHistory(async () => {
+            await ps.action.batchPlay(
+                [
+                    {
+                        _obj: 'set',
+                        _target: [
+                            {
+                                _ref: 'layer',
+                                _id: this.id
+                            }
+                        ],
+                        to: {
+                            _obj: 'layer',
+                            color: {
+                                _enum: 'color',
+                                _value: colorValue
+                            }
+                        }
+                    }
+                ],
+                {}
+            )
+        }, 'Set Layer Color')
+    }
+
     async getBase64ImageData(
         width: number,
         height: number
