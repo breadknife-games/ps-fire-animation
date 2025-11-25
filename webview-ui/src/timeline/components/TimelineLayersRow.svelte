@@ -342,7 +342,7 @@
                 <button
                     bind:this={colorButtonEl}
                     type="button"
-                    class="h-3 w-3 rounded-sm transition hover:ring-1 hover:ring-white/30"
+                    class="h-3 w-3 rounded-sm hover:ring-1 hover:ring-white/30"
                     style={`background-color: ${row.colorHex || '#3a3a3a'};`}
                     title="Change layer color"
                     onclick={handleColorClick}></button>
