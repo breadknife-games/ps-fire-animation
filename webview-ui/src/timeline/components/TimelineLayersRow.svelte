@@ -3,6 +3,8 @@
     import RowExpander from './RowExpander.svelte'
     import IconVisibility from '../../lib/components/icons/IconVisibility.svelte'
     import IconVisibilityOff from '../../lib/components/icons/IconVisibilityOff.svelte'
+    import IconDragHandle from '../../lib/components/icons/IconDragHandle.svelte'
+    import ContextMenu from '../../lib/components/ContextMenu.svelte'
     import { getRowHeight } from '../utils'
     import {
         useTimelinePanelContext,
@@ -11,7 +13,8 @@
     import {
         toggleRowVisibility,
         setLayerColor,
-        renameLayer
+        renameLayer,
+        deleteLayer
     } from '../../stores/timelineStore.svelte'
 
     const { row, depth = 0 } = $props<{
@@ -80,6 +83,13 @@
         toggleRow(row)
     }
 
+    function handleRowDoubleClick(event: MouseEvent) {
+        // Don't toggle if double-clicking on the name (that's for rename)
+        const target = event.target as HTMLElement
+        if (target.closest('[data-rename-target]')) return
+        handleToggle(true)
+    }
+
     async function handleVisibility(event: MouseEvent) {
         event.stopPropagation()
         await toggleRowVisibility(row.id, !row.visible)
@@ -144,6 +154,18 @@
         }
         event.dataTransfer?.setData('text/plain', String(row.id))
         event.dataTransfer!.effectAllowed = 'move'
+
+        // Use the whole row as the drag preview image
+        if (rowEl && event.dataTransfer) {
+            const rect = rowEl.getBoundingClientRect()
+            // Position the drag image so cursor is at the right edge where the handle is
+            event.dataTransfer.setDragImage(
+                rowEl,
+                rect.width - 20,
+                rect.height / 2
+            )
+        }
+
         startDrag(row.id)
     }
 
@@ -206,6 +228,30 @@
         event.preventDefault()
         executeDrop()
     }
+
+    // Context menu state
+    let contextMenuVisible = $state(false)
+    let contextMenuX = $state(0)
+    let contextMenuY = $state(0)
+
+    const contextMenuItems = $derived([
+        {
+            label: 'Delete',
+            action: () => deleteLayer(row.id)
+        }
+    ])
+
+    function handleContextMenu(event: MouseEvent) {
+        event.preventDefault()
+        event.stopPropagation()
+        contextMenuX = event.clientX
+        contextMenuY = event.clientY
+        contextMenuVisible = true
+    }
+
+    function closeContextMenu() {
+        contextMenuVisible = false
+    }
 </script>
 
 <svelte:window onclick={handleClickOutside} />
@@ -225,19 +271,19 @@
         </div>
     {/if}
 
+    <!-- svelte-ignore a11y_no_static_element_interactions -->
     <div
         bind:this={rowEl}
-        class="flex items-start border-b border-timeline-border py-1 text-xs text-timeline-foreground transition-opacity cursor-grab active:cursor-grabbing"
+        class="flex items-start border-b border-timeline-border py-1 text-xs text-timeline-foreground transition-opacity"
         class:bg-timeline-surface-1={!isDragging}
         class:bg-timeline-surface-3={isDragging}
         class:opacity-50={isDragging}
         style={`height: ${rowHeight}px; min-height: ${rowHeight}px; max-height: ${rowHeight}px;`}
-        draggable={!isRenaming}
-        ondragstart={handleDragStart}
-        ondragend={handleDragEnd}
         ondragover={handleDragOver}
         ondragleave={handleDragLeave}
         ondrop={handleDrop}
+        oncontextmenu={handleContextMenu}
+        ondblclick={handleRowDoubleClick}
         role="listitem">
         <div
             class="flex flex-1 items-center gap-2"
@@ -274,28 +320,40 @@
                 <!-- svelte-ignore a11y_no_static_element_interactions -->
                 <span
                     class="truncate rounded border border-transparent px-1 font-medium leading-4 text-timeline-foreground/90 cursor-text"
+                    data-rename-target
                     ondblclick={handleNameDoubleClick}
                     title="Double-click to rename">
                     {row.name}
                 </span>
             {/if}
         </div>
-        <button
-            type="button"
-            class={`ml-auto mr-2 flex h-5 w-5 items-center justify-center rounded text-timeline-muted transition ${
-                row.visible
-                    ? 'hover:bg-timeline-button-hover/60'
-                    : 'text-rose-300 hover:bg-rose-500/10'
-            }`}
-            title={row.visible ? 'Hide layer' : 'Show layer'}
-            aria-pressed={row.visible}
-            onclick={handleVisibility}>
-            {#if row.visible}
-                <IconVisibility class="h-3.5 w-3.5 fill-current" />
-            {:else}
-                <IconVisibilityOff class="h-3.5 w-3.5 fill-current" />
-            {/if}
-        </button>
+        <div class="ml-auto flex items-center gap-0.5 mr-1">
+            <button
+                type="button"
+                class={`flex h-5 w-5 items-center justify-center rounded text-timeline-muted transition ${
+                    row.visible
+                        ? 'hover:bg-timeline-button-hover/60'
+                        : 'text-rose-300 hover:bg-rose-500/10'
+                }`}
+                title={row.visible ? 'Hide layer' : 'Show layer'}
+                aria-pressed={row.visible}
+                onclick={handleVisibility}>
+                {#if row.visible}
+                    <IconVisibility class="h-3.5 w-3.5 fill-current" />
+                {:else}
+                    <IconVisibilityOff class="h-3.5 w-3.5 fill-current" />
+                {/if}
+            </button>
+            <!-- svelte-ignore a11y_no_static_element_interactions -->
+            <div
+                class="flex h-5 w-5 items-center justify-center rounded text-timeline-muted cursor-grab active:cursor-grabbing hover:bg-timeline-button-hover/60 hover:text-timeline-foreground transition"
+                title="Drag to reorder"
+                draggable={!isRenaming}
+                ondragstart={handleDragStart}
+                ondragend={handleDragEnd}>
+                <IconDragHandle class="h-3 w-3 fill-current" />
+            </div>
+        </div>
     </div>
 
     <!-- Drop indicator: below -->
@@ -320,3 +378,10 @@
         {/each}
     </div>
 {/if}
+
+<ContextMenu
+    items={contextMenuItems}
+    visible={contextMenuVisible}
+    x={contextMenuX}
+    y={contextMenuY}
+    onClose={closeContextMenu} />

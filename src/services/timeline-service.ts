@@ -23,9 +23,12 @@ export const timelineService = {
     setLayerVisibility,
     setLayerColor,
     renameLayer,
+    insertEmptyFrameBefore,
     insertEmptyFrameAfter,
-    duplicateFrameLayer,
+    duplicateFrameBefore,
+    duplicateFrameAfter,
     deleteFrame,
+    deleteLayer,
     getLayerThumbnail,
     setPlayheadIndex,
     getPreviewState,
@@ -90,6 +93,18 @@ async function renameLayer(
     return getState()
 }
 
+async function insertEmptyFrameBefore(
+    anchorLayerId: number
+): Promise<TimelineState> {
+    const layer = await resolveLayer(anchorLayerId)
+    await layer.select()
+    const newFrame = await layer.document.createFrame()
+    // Move the new frame before the anchor in timeline
+    // Timeline order is reversed from layer stack, so "before" = "below" in layer stack
+    await layer.document.moveLayer(newFrame.id, anchorLayerId, 'below')
+    return getState()
+}
+
 async function insertEmptyFrameAfter(
     anchorLayerId: number
 ): Promise<TimelineState> {
@@ -99,13 +114,28 @@ async function insertEmptyFrameAfter(
     return getState()
 }
 
-async function duplicateFrameLayer(layerId: number): Promise<TimelineState> {
+async function duplicateFrameBefore(layerId: number): Promise<TimelineState> {
+    const layer = await resolveLayer(layerId)
+    const duplicated = await layer.document.duplicateLayer(layer)
+    // Move the duplicate before the original in timeline
+    // Timeline order is reversed from layer stack, so "before" = "below" in layer stack
+    await layer.document.moveLayer(duplicated.id, layerId, 'below')
+    return getState()
+}
+
+async function duplicateFrameAfter(layerId: number): Promise<TimelineState> {
     const layer = await resolveLayer(layerId)
     await layer.document.duplicateLayer(layer)
     return getState()
 }
 
 async function deleteFrame(layerId: number): Promise<TimelineState> {
+    const layer = await resolveLayer(layerId)
+    await layer.document.deleteLayer(layer)
+    return getState()
+}
+
+async function deleteLayer(layerId: number): Promise<TimelineState> {
     const layer = await resolveLayer(layerId)
     await layer.document.deleteLayer(layer)
     return getState()

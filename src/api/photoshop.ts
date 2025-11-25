@@ -24,12 +24,18 @@ export const timelineSetLayerColor = (layerId: number, colorValue: string) =>
     timelineService.setLayerColor(layerId, colorValue)
 export const timelineRenameLayer = (layerId: number, name: string) =>
     timelineService.renameLayer(layerId, name)
+export const timelineInsertEmptyFrameBefore = (layerId: number) =>
+    timelineService.insertEmptyFrameBefore(layerId)
 export const timelineInsertEmptyFrameAfter = (layerId: number) =>
     timelineService.insertEmptyFrameAfter(layerId)
-export const timelineDuplicateFrame = (layerId: number) =>
-    timelineService.duplicateFrameLayer(layerId)
+export const timelineDuplicateFrameBefore = (layerId: number) =>
+    timelineService.duplicateFrameBefore(layerId)
+export const timelineDuplicateFrameAfter = (layerId: number) =>
+    timelineService.duplicateFrameAfter(layerId)
 export const timelineDeleteFrame = (layerId: number) =>
     timelineService.deleteFrame(layerId)
+export const timelineDeleteLayer = (layerId: number) =>
+    timelineService.deleteLayer(layerId)
 export const timelineSetPlayheadIndex = (index: number) =>
     timelineService.setPlayheadIndex(index)
 export const timelineGetLayerThumbnail = (

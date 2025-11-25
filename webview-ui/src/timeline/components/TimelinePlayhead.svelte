@@ -82,7 +82,7 @@
         class="pointer-events-auto absolute top-2"
         style={`transform: translateX(${offset}px);`}>
         <button
-            class="absolute top-[7px] left-[-7px]"
+            class="absolute top-[7px] left-[-7.5px]"
             type="button"
             onpointerdown={handlePointerDown}>
             <IconPlayhead class="h-4 w-4 fill-current" />

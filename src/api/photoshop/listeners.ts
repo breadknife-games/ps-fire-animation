@@ -89,19 +89,19 @@ export class FireListeners {
     static async addHistoryStateListener(callback: () => void): Promise<void> {
         this.historyStateListeners.push(callback)
 
-        // For some reason photoshop sometimes sends duplicate history state change events?
-        // So make sure we only call the callback once per change
-        let lastId = 0
+        // Debounce to handle duplicate events that Photoshop sometimes sends
+        let debounceTimer: ReturnType<typeof setTimeout> | null = null
         await addListener<HistoryStateChangedDescriptor>(
             'historyStateChanged',
             descriptor => {
                 console.log('historyStateChanged', descriptor.ID)
-                if (descriptor.ID !== lastId) {
-                    lastId = descriptor.ID
-                    callback()
-                } else {
-                    lastId = 0
+                if (debounceTimer) {
+                    clearTimeout(debounceTimer)
                 }
+                debounceTimer = setTimeout(() => {
+                    debounceTimer = null
+                    callback()
+                }, 50)
             }
         )
     }

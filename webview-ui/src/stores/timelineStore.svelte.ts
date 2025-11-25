@@ -53,21 +53,39 @@ export async function renameLayer(layerId: number, name: string) {
     timelineState.state = state
 }
 
+export async function insertFrameBefore(layerId: number) {
+    const api = getApiClient()
+    const state = await api.timelineInsertEmptyFrameBefore(layerId)
+    timelineState.state = state
+}
+
 export async function insertFrameAfter(layerId: number) {
     const api = getApiClient()
     const state = await api.timelineInsertEmptyFrameAfter(layerId)
     timelineState.state = state
 }
 
-export async function duplicateFrame(layerId: number) {
+export async function duplicateFrameBefore(layerId: number) {
     const api = getApiClient()
-    const state = await api.timelineDuplicateFrame(layerId)
+    const state = await api.timelineDuplicateFrameBefore(layerId)
+    timelineState.state = state
+}
+
+export async function duplicateFrameAfter(layerId: number) {
+    const api = getApiClient()
+    const state = await api.timelineDuplicateFrameAfter(layerId)
     timelineState.state = state
 }
 
 export async function deleteFrame(layerId: number) {
     const api = getApiClient()
     const state = await api.timelineDeleteFrame(layerId)
+    timelineState.state = state
+}
+
+export async function deleteLayer(layerId: number) {
+    const api = getApiClient()
+    const state = await api.timelineDeleteLayer(layerId)
     timelineState.state = state
 }
 

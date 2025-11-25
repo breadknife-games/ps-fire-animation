@@ -5,7 +5,7 @@
     import { getRowHeight } from '../utils'
     import { useTimelinePanelContext } from '../timelineContext'
     import {
-        duplicateFrame,
+        duplicateFrameAfter,
         insertFrameAfter
     } from '../../stores/timelineStore.svelte'
 
@@ -41,7 +41,7 @@
         if (!hasFrames) return
         const anchor = row.frames.at(-1)?.id
         if (!anchor) return
-        await duplicateFrame(anchor)
+        await duplicateFrameAfter(anchor)
     }
 </script>
 

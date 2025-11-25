@@ -1,9 +1,17 @@
 <script lang="ts">
     import type { TimelineFrameDTO } from '../../../../src/shared/timeline'
     import PSLayerThumbnail from '../../lib/components/PSLayerThumbnail.svelte'
+    import ContextMenu from '../../lib/components/ContextMenu.svelte'
     import { lightenDarkenColor } from '../../lib/utils'
     import type { ThumbnailState } from '../utils'
     import { useTimelinePanelContext } from '../timelineContext'
+    import {
+        insertFrameBefore,
+        insertFrameAfter,
+        duplicateFrameBefore,
+        duplicateFrameAfter,
+        deleteFrame
+    } from '../../stores/timelineStore.svelte'
 
     const emptyThumbnail: ThumbnailState = {
         status: 'idle',
@@ -87,6 +95,49 @@
         if (!selectable) return
         onSelect(resolvedFrame)
     }
+
+    // Context menu state
+    let contextMenuVisible = $state(false)
+    let contextMenuX = $state(0)
+    let contextMenuY = $state(0)
+
+    const contextMenuItems = $derived([
+        {
+            label: 'Insert Before',
+            action: () => insertFrameBefore(resolvedFrame.id)
+        },
+        {
+            label: 'Insert After',
+            action: () => insertFrameAfter(resolvedFrame.id)
+        },
+        { label: '', action: () => {}, separator: true },
+        {
+            label: 'Duplicate Before',
+            action: () => duplicateFrameBefore(resolvedFrame.id)
+        },
+        {
+            label: 'Duplicate After',
+            action: () => duplicateFrameAfter(resolvedFrame.id)
+        },
+        { label: '', action: () => {}, separator: true },
+        {
+            label: 'Delete',
+            action: () => deleteFrame(resolvedFrame.id)
+        }
+    ])
+
+    function handleContextMenu(event: MouseEvent) {
+        event.preventDefault()
+        event.stopPropagation()
+        if (isFolder) return // Don't show context menu for folders
+        contextMenuX = event.clientX
+        contextMenuY = event.clientY
+        contextMenuVisible = true
+    }
+
+    function closeContextMenu() {
+        contextMenuVisible = false
+    }
 </script>
 
 <div
@@ -101,6 +152,7 @@
         class:cursor-pointer={selectable}
         class:cursor-default={!selectable}
         onclick={handleClick}
+        oncontextmenu={handleContextMenu}
         style={`background-color: ${baseColor}; border-color: ${selected ? 'var(--color-timeline-foreground)' : borderColor}; `}>
         {#if !hasLoaded && expanded}
             <div class="flex h-full w-full items-center justify-center">
@@ -121,3 +173,10 @@
         {/if}
     </div>
 </div>
+
+<ContextMenu
+    items={contextMenuItems}
+    visible={contextMenuVisible}
+    x={contextMenuX}
+    y={contextMenuY}
+    onClose={closeContextMenu} />
