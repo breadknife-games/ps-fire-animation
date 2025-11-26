@@ -79,7 +79,7 @@
     $effect(() => {
         const padding = selected ? 24 : 21
         thumbHeight = Math.max(0, height - padding)
-        thumbWidth = Math.max(0, width - padding)
+        thumbWidth = Math.max(0, timelineState.frameWidth - padding)
 
         if (thumbnailState.status === 'loaded') {
             hasLoaded = true
