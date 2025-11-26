@@ -41,7 +41,9 @@ export const timelineService = {
     createGroup,
     createVideoGroup,
     normalizeTimeline,
-    createVideoTimeline
+    createVideoTimeline,
+    goToPreviousFrame,
+    goToNextFrame
 }
 
 async function getState(): Promise<TimelineState> {
@@ -314,6 +316,74 @@ function collectPreviewFrames(
 
 async function toggleOnionSkin(): Promise<void> {
     await PSTimeline.toggleOnionSkin()
+}
+
+/**
+ * Navigate to the previous frame in the timeline
+ */
+async function goToPreviousFrame(): Promise<TimelineState> {
+    return stepFrame(-1)
+}
+
+/**
+ * Navigate to the next frame in the timeline
+ */
+async function goToNextFrame(): Promise<TimelineState> {
+    return stepFrame(1)
+}
+
+/**
+ * Step the playhead by a given direction (-1 for previous, +1 for next)
+ */
+async function stepFrame(direction: -1 | 1): Promise<TimelineState> {
+    const state = await getState()
+    if (!state.timelineEnabled) return state
+
+    // Find the currently selected frame
+    const selectedFrame = findSelectedFrameInRows(
+        state.rows,
+        state.selectedLayerIds
+    )
+
+    if (selectedFrame) {
+        // If a frame is selected, try to navigate within the same row
+        const nextIndex = selectedFrame.index + direction
+        const nextFrame = selectedFrame.row.frames[nextIndex]
+        if (nextFrame) {
+            return selectLayer(nextFrame.id)
+        }
+    }
+
+    // Otherwise, just move the playhead
+    const newIndex = Math.max(0, state.headIndex + direction)
+    return setPlayheadIndex(newIndex)
+}
+
+/**
+ * Find the selected frame within the timeline rows
+ */
+function findSelectedFrameInRows(
+    rows: TimelineRowDTO[],
+    selectedLayerIds: number[]
+): { row: TimelineRowDTO; frame: TimelineFrameDTO; index: number } | null {
+    const selectionSet = new Set(selectedLayerIds)
+    for (const row of rows) {
+        if (row.children?.length) {
+            const result = findSelectedFrameInRows(
+                row.children,
+                selectedLayerIds
+            )
+            if (result) return result
+        } else {
+            for (let i = 0; i < row.frames.length; i++) {
+                const frame = row.frames[i]
+                if (selectionSet.has(frame.id)) {
+                    return { row, frame, index: i }
+                }
+            }
+        }
+    }
+    return null
 }
 
 async function openOnionSkinSettings(): Promise<void> {
