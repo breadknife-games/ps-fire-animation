@@ -112,7 +112,7 @@ if (typeof process !== 'undefined' && process?.version?.includes('uxp')) {
     // UXP environment
     start()
 
-    // Set up panel menu items
+    // Set up panel menu items and commands
     uxp.entrypoints.setup({
         panels: {
             'games.breadknife.fireanimation.timeline': {
@@ -120,6 +120,36 @@ if (typeof process !== 'undefined' && process?.version?.includes('uxp')) {
                 menuItems: timelineMenuItems,
                 invokeMenu(id: string) {
                     menuActions[id]?.()
+                }
+            }
+        },
+        commands: {
+            previousFrame: {
+                async run() {
+                    console.log('[Command] Previous Frame')
+                    try {
+                        const state = await timelineService.goToPreviousFrame()
+                        const api = getTimelineWebviewAPI()
+                        if (api) {
+                            await api.receiveTimelineState(state)
+                        }
+                    } catch (err) {
+                        console.error('[Command] Previous Frame error:', err)
+                    }
+                }
+            },
+            nextFrame: {
+                async run() {
+                    console.log('[Command] Next Frame')
+                    try {
+                        const state = await timelineService.goToNextFrame()
+                        const api = getTimelineWebviewAPI()
+                        if (api) {
+                            await api.receiveTimelineState(state)
+                        }
+                    } catch (err) {
+                        console.error('[Command] Next Frame error:', err)
+                    }
                 }
             }
         }
