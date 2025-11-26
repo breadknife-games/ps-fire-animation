@@ -20,6 +20,27 @@ export class Timeline {
     static async createVideoTimeline(): Promise<void> {
         await ps.core.executeAsModal(
             async () => {
+                // Check if document has any real layers - Photoshop requires at least one
+                // The Background layer (in italics) doesn't count for video timelines
+                const doc = ps.app.activeDocument
+                const hasOnlyBackground =
+                    doc.layers.length === 1 && doc.layers[0].isBackgroundLayer
+                const needsLayer =
+                    !doc.layers || doc.layers.length === 0 || hasOnlyBackground
+
+                if (needsLayer) {
+                    // Create a basic layer first
+                    await ps.action.batchPlay(
+                        [
+                            {
+                                _obj: 'make',
+                                _target: [{ _ref: 'layer' }]
+                            }
+                        ],
+                        {}
+                    )
+                }
+
                 await ps.action.batchPlay(
                     [
                         {
