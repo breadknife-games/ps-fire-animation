@@ -1,6 +1,7 @@
 import type {
     LayerThumbnailPayload,
     PreviewFrameDTO,
+    PreviewFrameImagePayload,
     PreviewState,
     TimelineFrameDTO,
     TimelineRowDTO,
@@ -10,9 +11,11 @@ import { FireDocument } from '../api/photoshop/document'
 import { FireLayer, FireLayerType, findLayerById } from '../api/photoshop/layer'
 import type { FireLayerTrimmedBase64ImageData } from '../api/photoshop/layer'
 import { Timeline as PSTimeline } from '../api/photoshop/timeline'
+import { photoshop as ps } from '../globals'
 
 const DEFAULT_THUMBNAIL_RESOLUTION = 360
 const DEFAULT_FRAME_DELAY = 100
+const DEFAULT_PREVIEW_RESOLUTION = 720
 
 const toHex = (color?: { hex: string } | null) =>
     color?.hex?.length ? color.hex : ''
@@ -32,6 +35,7 @@ export const timelineService = {
     getLayerThumbnail,
     setPlayheadIndex,
     getPreviewState,
+    renderPreviewFrame,
     toggleOnionSkin,
     openOnionSkinSettings,
     moveLayer,
@@ -224,6 +228,57 @@ async function getPreviewState(): Promise<PreviewState> {
     }
 }
 
+async function renderPreviewFrame(
+    frameOrder: number,
+    resolution = DEFAULT_PREVIEW_RESOLUTION
+): Promise<PreviewFrameImagePayload> {
+    const document = FireDocument.current
+    const layers = document.getLayers()
+    const frames = collectPreviewFrames(layers)
+
+    if (!frames.length) {
+        return {
+            order: 0,
+            frameId: null,
+            width: 0,
+            height: 0,
+            base64: ''
+        }
+    }
+
+    const safeOrder = clampFrameOrder(frameOrder, frames.length)
+    const renderableLayers = collectRenderableLayers(layers)
+
+    if (!renderableLayers.length) {
+        return {
+            order: safeOrder,
+            frameId: frames[safeOrder]?.id ?? null,
+            width: 0,
+            height: 0,
+            base64: ''
+        }
+    }
+
+    const dimensions = computePreviewDimensions(document, resolution)
+    const buffer = await compositeFrame(
+        renderableLayers,
+        safeOrder,
+        dimensions.width,
+        dimensions.height
+    )
+    const base64 = buffer.length
+        ? await encodePreviewBuffer(buffer, dimensions.width, dimensions.height)
+        : ''
+
+    return {
+        order: safeOrder,
+        frameId: frames[safeOrder]?.id ?? null,
+        width: dimensions.width,
+        height: dimensions.height,
+        base64
+    }
+}
+
 async function resolveLayer(layerId: number): Promise<FireLayer> {
     const document = FireDocument.current
     const layers = document.getLayers()
@@ -312,6 +367,156 @@ function collectPreviewFrames(
         }
     }
     return acc
+}
+
+function collectRenderableLayers(
+    layers: ReadonlyArray<FireLayer>,
+    acc: FireLayer[] = []
+): FireLayer[] {
+    for (const layer of layers) {
+        if (!layer.visible) continue
+        if (layer.type === FireLayerType.Group) {
+            collectRenderableLayers(layer.children as FireLayer[], acc)
+            continue
+        }
+        if (
+            layer.type === FireLayerType.Layer ||
+            layer.type === FireLayerType.Video
+        ) {
+            acc.push(layer)
+        }
+    }
+    return acc
+}
+
+async function compositeFrame(
+    layers: ReadonlyArray<FireLayer>,
+    frameIndex: number,
+    width: number,
+    height: number
+): Promise<Uint8Array> {
+    const output = new Uint8Array(width * height * 3)
+    output.fill(255)
+    const renderStack = buildRenderStack(layers, frameIndex)
+
+    for (const layer of renderStack) {
+        const data = await layer.getUint8ArrayImageData(width, height)
+        if (
+            !data.data.length ||
+            data.fullWidth === 0 ||
+            data.fullHeight === 0
+        ) {
+            continue
+        }
+
+        const imgStartX = Math.floor((data.x / data.fullWidth) * width)
+        const imgStartY = Math.floor((data.y / data.fullHeight) * height)
+        const imgWidth = Math.floor((data.width / data.fullWidth) * width)
+        const imgHeight = Math.floor((data.height / data.fullHeight) * height)
+
+        if (imgWidth <= 0 || imgHeight <= 0) continue
+
+        for (let x = 0; x < imgWidth; x++) {
+            for (let y = 0; y < imgHeight; y++) {
+                const outPixel = x + imgStartX + (y + imgStartY) * width
+                if (outPixel < 0 || outPixel >= width * height) continue
+
+                const dataXPercent = imgWidth > 0 ? x / imgWidth : 0
+                const dataYPercent = imgHeight > 0 ? y / imgHeight : 0
+                const dataX = Math.floor(dataXPercent * width)
+                const dataY = Math.floor(dataYPercent * height)
+                const dataPixel = dataX + dataY * width
+
+                const r = data.data[dataPixel * 4]
+                const g = data.data[dataPixel * 4 + 1]
+                const b = data.data[dataPixel * 4 + 2]
+                const a = data.data[dataPixel * 4 + 3]
+
+                const alpha = a / 255
+                const alphaInv = 1 - alpha
+                output[outPixel * 3] =
+                    r * alpha + output[outPixel * 3] * alphaInv
+                output[outPixel * 3 + 1] =
+                    g * alpha + output[outPixel * 3 + 1] * alphaInv
+                output[outPixel * 3 + 2] =
+                    b * alpha + output[outPixel * 3 + 2] * alphaInv
+            }
+        }
+    }
+
+    return output
+}
+
+function buildRenderStack(
+    layers: ReadonlyArray<FireLayer>,
+    frameIndex: number
+): FireLayer[] {
+    return layers
+        .map(layer => {
+            if (layer.type !== FireLayerType.Video) return layer
+            return selectVideoFrameLayer(layer, frameIndex)
+        })
+        .filter((layer): layer is FireLayer => Boolean(layer))
+        .reverse()
+}
+
+function selectVideoFrameLayer(
+    layer: FireLayer,
+    frameIndex: number
+): FireLayer | null {
+    if (!layer.children.length) return null
+    const frames = [...layer.children].reverse() as FireLayer[]
+    return frames[frameIndex] ?? null
+}
+
+async function encodePreviewBuffer(
+    buffer: Uint8Array,
+    width: number,
+    height: number
+): Promise<string> {
+    if (!buffer.length) return ''
+    const imageData = await ps.imaging.createImageDataFromBuffer(buffer, {
+        width,
+        height,
+        components: 3,
+        chunky: true,
+        colorSpace: 'RGB'
+    })
+
+    try {
+        const base64 = (await ps.imaging.encodeImageData({
+            imageData,
+            base64: true
+        })) as string
+        return `data:image/png;base64,${base64}`
+    } finally {
+        if (typeof imageData?.dispose === 'function') {
+            await imageData.dispose()
+        }
+    }
+}
+
+function computePreviewDimensions(
+    document: FireDocument,
+    resolution: number
+): { width: number; height: number } {
+    const aspectRatio = document.width / Math.max(1, document.height)
+    if (aspectRatio >= 1) {
+        return {
+            width: resolution,
+            height: Math.max(1, Math.round(resolution / aspectRatio))
+        }
+    }
+    return {
+        width: Math.max(1, Math.round(resolution * aspectRatio)),
+        height: resolution
+    }
+}
+
+function clampFrameOrder(order: number, total: number) {
+    if (total <= 0) return 0
+    if (!Number.isFinite(order)) return 0
+    return Math.min(Math.max(Math.floor(order), 0), total - 1)
 }
 
 async function toggleOnionSkin(): Promise<void> {

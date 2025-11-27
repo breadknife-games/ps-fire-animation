@@ -70,3 +70,5 @@ export const timelineNormalize = () => timelineService.normalizeTimeline()
 export const timelineCreateVideoTimeline = () =>
     timelineService.createVideoTimeline()
 export const previewGetState = () => timelineService.getPreviewState()
+export const previewRenderFrame = (order: number, resolution?: number) =>
+    timelineService.renderPreviewFrame(order, resolution)

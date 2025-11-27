@@ -11,14 +11,14 @@
     setApiClient(api)
 
     if (page === 'timeline') loadTimelineState()
-    // if (page === 'preview') loadPreviewState()
+    if (page === 'preview') loadPreviewState()
 </script>
 
 <main class="h-full w-full bg-slate-950 text-slate-100">
     {#if page === 'timeline'}
         <TimelinePanelWrapper />
     {:else if page === 'preview'}
-        <!-- <PreviewPanel /> -->
+        <PreviewPanel />
     {:else}
         <div
             class="flex h-full items-center justify-center text-sm text-slate-400">
