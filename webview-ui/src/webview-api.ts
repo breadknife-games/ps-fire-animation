@@ -15,7 +15,7 @@ export const receiveTimelineState = (state: TimelineState) => {
 }
 
 export const receivePreviewState = (state: PreviewState) => {
-    syncPreviewState(state)
+    void syncPreviewState(state)
 }
 
 export const setTheme = (theme: ThemeName) => {
