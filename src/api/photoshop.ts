@@ -73,3 +73,5 @@ export const timelineCreateVideoTimeline = () =>
 export const previewGetState = () => previewService.getPreviewState()
 export const previewRenderFrame = (frameId: string, resolution?: number) =>
     previewService.renderPreviewFrame(frameId, resolution)
+export const previewSetSettings = (fps: number, repeat: boolean) =>
+    previewService.setPreviewSettings(fps, repeat)
