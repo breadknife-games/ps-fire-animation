@@ -23,7 +23,7 @@
         setTimelineWebviewAPI(timelineWebviewAPI)
         setPreviewWebviewAPI(previewWebviewAPI)
         await bindTimelineWebview(timelineWebviewAPI)
-        await bindPreviewWebview()
+        await bindPreviewWebview(previewWebviewAPI)
     })
 </script>
 

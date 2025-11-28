@@ -149,23 +149,25 @@
             timelinePanelState.rows,
             timelinePanelState.selectionSet
         )
-        if (!current || frameViewportWidth <= 0) return
+        if (!current || frameViewportWidth <= 0 || !bodyScrollEl) return
         const frameStart = current.index * timelinePanelState.frameWidth
         const frameEnd = frameStart + timelinePanelState.frameWidth
         const viewportStart = untrack(() => scrollX)
         const viewportEnd = untrack(() => scrollX) + frameViewportWidth
         const padding = timelinePanelState.frameWidth * 0.5
+        let targetScroll: number | null = null
         if (frameStart < viewportStart + padding) {
-            scrollX = Math.max(0, frameStart - padding)
+            targetScroll = Math.max(0, frameStart - padding)
         } else if (frameEnd > viewportEnd - padding) {
-            scrollX = Math.max(0, frameEnd - frameViewportWidth + padding)
+            targetScroll = Math.max(0, frameEnd - frameViewportWidth + padding)
         }
-    })
-
-    // Sync body scroll with scrollX
-    $effect(() => {
-        if (!bodyScrollEl) return
-        bodyScrollEl.scrollLeft = scrollX
+        if (targetScroll !== null) {
+            bodyScrollEl.scroll({
+                left: targetScroll,
+                behavior: 'smooth'
+            })
+            scrollX = targetScroll
+        }
     })
 
     // Update headIndex when a frame is selected
@@ -282,7 +284,8 @@
     }
 
     function handleScrollbarChange(newScrollX: number) {
-        scrollX = newScrollX
+        if (!bodyScrollEl) return
+        bodyScrollEl.scrollLeft = newScrollX
     }
 
     function startDrag(rowId: number) {

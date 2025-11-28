@@ -3,7 +3,8 @@ import type { TimelineState } from '../../src/shared/timeline'
 import type { PreviewState } from '../../src/shared/preview'
 import {
     syncPreviewState,
-    regenerateAffectedFrames
+    regenerateAffectedFrames,
+    updatePreviewSelection
 } from './stores/previewStore.svelte'
 import { timelineState } from './stores/timelineStore.svelte'
 import { setTheme as setThemeStore, type ThemeName } from './stores/themeStore'
@@ -46,4 +47,10 @@ export const regeneratePreviewFrames = (
         resolution
     )
     void regenerateAffectedFrames(frameIds, resolution)
+}
+
+export const updatePreviewSelectedFrame = (selectedFrameId: string | null) => {
+    if (selectedFrameId) {
+        updatePreviewSelection(selectedFrameId)
+    }
 }

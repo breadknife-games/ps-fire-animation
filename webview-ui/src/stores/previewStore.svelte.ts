@@ -85,6 +85,15 @@ export async function syncPreviewState(
     return state
 }
 
+export function updatePreviewSelection(selectedFrameId: string) {
+    if (previewState.state) {
+        previewState.state = {
+            ...previewState.state,
+            selectedFrameId
+        }
+    }
+}
+
 async function hydrateFrameImages(
     state: PreviewState,
     resolution: number | undefined,

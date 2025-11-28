@@ -13,7 +13,7 @@ import {
 } from '../api/photoshop/layer'
 import type { FireLayerTrimmedBase64ImageData } from '../api/photoshop/layer'
 import { Timeline as PSTimeline } from '../api/photoshop/timeline'
-import { getPreviewWebviewAPI } from './webview-ref'
+import { getPreviewWebviewAPI, getTimelineWebviewAPI } from './webview-ref'
 import { previewService } from './preview-service'
 
 const DEFAULT_THUMBNAIL_RESOLUTION = 360
@@ -92,7 +92,24 @@ async function selectLayer(layerId: number): Promise<TimelineState> {
     const layer = await resolveLayer(layerId)
     await layer.select()
     await syncPlayheadFromLayer(layer)
-    return getState()
+
+    const state = await getState()
+
+    const timelineAPI = getTimelineWebviewAPI()
+    if (timelineAPI) {
+        await timelineAPI.receiveTimelineState(state)
+    }
+
+    // Also update preview selectedFrameId without regenerating frames
+    const previewAPI = getPreviewWebviewAPI()
+    if (previewAPI) {
+        const previewState = await previewService.getPreviewState()
+        await previewAPI.updatePreviewSelectedFrame(
+            previewState.selectedFrameId
+        )
+    }
+
+    return state
 }
 
 async function setLayerVisibility(

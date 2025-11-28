@@ -77,6 +77,24 @@
         }
     })
 
+    $effect(() => {
+        const selectedFrameId = previewState.state?.selectedFrameId
+        if (!selectedFrameId) return
+        if (isPlaying) return
+        if (frames.length === 0) return
+
+        const frameIndex = frames.findIndex(
+            frame => frame.id === selectedFrameId
+        )
+
+        if (
+            frameIndex >= 0 &&
+            frameIndex !== untrack(() => currentFrameIndex)
+        ) {
+            currentFrameIndex = frameIndex
+        }
+    })
+
     const currentFrame = $derived(frames[currentFrameIndex])
     const currentImage = $derived(
         currentFrame ? (previewState.frameImages[currentFrame.id] ?? '') : ''
@@ -88,6 +106,7 @@
 
     function handleSelectFrame(index: number) {
         currentFrameIndex = index
+        syncTimelineWithPreview()
     }
 
     function setThumbnailRef(node: HTMLButtonElement, index: number) {
@@ -107,12 +126,24 @@
         if (!canNavigate) return
         currentFrameIndex =
             currentFrameIndex > 0 ? currentFrameIndex - 1 : frames.length - 1
+        syncTimelineWithPreview()
     }
 
     function handleNextFrame() {
         if (!canNavigate) return
         currentFrameIndex =
             currentFrameIndex < frames.length - 1 ? currentFrameIndex + 1 : 0
+        syncTimelineWithPreview()
+    }
+
+    function syncTimelineWithPreview() {
+        const api = getApiClient()
+        const currentFrame = frames[currentFrameIndex]
+        if (!currentFrame) return
+
+        void api.timelineSelectLayer(currentFrame.layerIds[0]).catch(err => {
+            console.error('Failed to sync timeline with preview:', err)
+        })
     }
 
     function handlePlay() {
@@ -137,10 +168,16 @@
             clearInterval(playInterval)
             playInterval = null
         }
+        syncTimelineWithPreview()
     }
 
     function handleStop() {
-        handlePause()
+        if (!isPlaying) return
+        isPlaying = false
+        if (playInterval !== null) {
+            clearInterval(playInterval)
+            playInterval = null
+        }
         if (frames.length > 0) {
             currentFrameIndex = 0
         }

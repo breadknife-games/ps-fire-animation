@@ -151,9 +151,10 @@
     <!-- svelte-ignore a11y_click_events_have_key_events -->
     <!-- svelte-ignore a11y_no_static_element_interactions -->
     <div
-        class="m-0 rounded-lg p-1 transition focus-visible:outline focus-visible:outline-timeline-border w-full h-full"
+        class="m-0 rounded-lg p-1 transition-all duration-200 ease-out focus-visible:outline focus-visible:outline-timeline-border w-full h-full"
         class:border-2={!selected}
         class:border-4={selected}
+        class:shadow-[0_0_0_1px_var(--color-timeline-foreground)]={selected}
         class:cursor-pointer={selectable}
         class:cursor-default={!selectable}
         onclick={handleClick}
