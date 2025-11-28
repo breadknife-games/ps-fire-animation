@@ -11,6 +11,7 @@
     import {
         loadPreviewState,
         previewState,
+        updatePreviewSettings,
         type PreviewLoadingStatus
     } from '../stores/previewStore.svelte'
     import { generateGif, downloadGif } from '../lib/gif-generator'
@@ -299,7 +300,8 @@
     function setFpsPreset(value: number) {
         fps = value
         closeFpsDropdown()
-        // Save to document
+        // Update preview state and save to document
+        updatePreviewSettings(fps, repeat)
         savePreviewSettings(fps, repeat)
         // Restart playback with new FPS if currently playing
         if (isPlaying) {
@@ -313,7 +315,8 @@
         if (!isNaN(value) && value >= 1 && value <= 60) {
             fps = value
             closeFpsDropdown()
-            // Save to document
+            // Update preview state and save to document
+            updatePreviewSettings(fps, repeat)
             savePreviewSettings(fps, repeat)
             // Restart playback with new FPS if currently playing
             if (isPlaying) {
@@ -343,7 +346,8 @@
 
     function handleRepeatToggle() {
         repeat = !repeat
-        // Save to document
+        // Update preview state and save to document
+        updatePreviewSettings(fps, repeat)
         savePreviewSettings(fps, repeat)
     }
 </script>

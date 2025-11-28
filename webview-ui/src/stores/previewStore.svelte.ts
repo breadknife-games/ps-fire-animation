@@ -94,6 +94,16 @@ export function updatePreviewSelection(selectedFrameId: string) {
     }
 }
 
+export function updatePreviewSettings(fps: number, repeat: boolean) {
+    if (previewState.state) {
+        previewState.state = {
+            ...previewState.state,
+            fps,
+            repeat
+        }
+    }
+}
+
 async function hydrateFrameImages(
     state: PreviewState,
     resolution: number | undefined,
