@@ -5,7 +5,7 @@
     import PreviewPanel from './preview/PreviewPanel.svelte'
     import { setApiClient } from './lib/api-client'
     import { loadTimelineState } from './stores/timelineStore.svelte'
-    import { loadPreviewState } from './stores/previewStore'
+    import { loadPreviewState } from './stores/previewStore.svelte'
 
     const { page, api } = initWebview(webviewAPI)
     setApiClient(api)
@@ -14,7 +14,7 @@
     if (page === 'preview') loadPreviewState()
 </script>
 
-<main class="h-full w-full bg-slate-950 text-slate-100">
+<main class="h-full w-full">
     {#if page === 'timeline'}
         <TimelinePanelWrapper />
     {:else if page === 'preview'}

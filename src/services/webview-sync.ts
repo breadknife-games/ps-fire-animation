@@ -4,17 +4,15 @@ import { FireDocument } from '../api/photoshop/document'
 import { FireLayerType, findLayerWithParent } from '../api/photoshop/layer'
 import { Timeline } from '../api/photoshop/timeline'
 import { timelineService } from './timeline-service'
+import { previewService } from './preview-service'
 
 export async function bindTimelineWebview(api: WebviewAPI) {
-    console.log('binding timeline webview')
     const pushTimeline = async () => {
         try {
             const state = await timelineService.getState()
-            console.log('Pushing timeline state')
-            console.log('selections', state.selectedLayerIds)
             await api.receiveTimelineState(state)
         } catch (error) {
-            console.error('Failed to push timeline state', error)
+            console.error('[Timeline] Failed to push state', error)
         }
     }
 
@@ -25,7 +23,6 @@ export async function bindTimelineWebview(api: WebviewAPI) {
         await pushTimeline()
     })
     await FireListeners.addSelectDocumentListener(async () => {
-        console.log('[webview-sync] Document switched, refreshing timeline')
         await pushTimeline()
     })
 
@@ -36,12 +33,7 @@ export async function bindTimelineWebview(api: WebviewAPI) {
             const layers = document.getLayers()
             const result = findLayerWithParent(layers, layerId)
 
-            if (!result) {
-                console.log(
-                    `[webview-sync] Layer ${layerId} not found, skipping auto-fix`
-                )
-                return
-            }
+            if (!result) return
 
             const { layer, parent } = result
 
@@ -50,26 +42,25 @@ export async function bindTimelineWebview(api: WebviewAPI) {
                 layer.type === FireLayerType.Layer &&
                 (!parent || parent.type !== FireLayerType.Video)
             ) {
-                console.log(
-                    `[webview-sync] Auto-fixing regular layer "${layer.name}" (${layerId}) to 5000 length`
-                )
                 await Timeline.setLayerLength(layerId, 5000)
             }
         } catch (error) {
-            console.error('[webview-sync] Error auto-fixing layer:', error)
+            console.error('[Timeline] Error auto-fixing layer:', error)
         }
     })
 }
 
-export async function bindPreviewWebview(api: WebviewAPI) {
-    // const pushPreview = async () => {
-    //     try {
-    //         const preview = await timelineService.getPreviewState()
-    //         await api.receivePreviewState(preview)
-    //     } catch (error) {
-    //         console.error('Failed to push preview state', error)
-    //     }
-    // }
-    // await pushPreview()
-    // await FireListeners.addHistoryStateListener(pushPreview)
+export async function bindPreviewWebview() {
+    await previewService.triggerPreviewRegeneration()
+
+    await FireListeners.addHistoryStateListener(async () => {
+        const selectedLayerIds = FireDocument.current.getSelectedLayerIds()
+        await previewService.triggerPreviewRegeneration(selectedLayerIds)
+    })
+
+    // Also regenerate frames when layer visibility changes
+    await FireListeners.addLayerVisibilityChangeListener(async () => {
+        const selectedLayerIds = FireDocument.current.getSelectedLayerIds()
+        await previewService.triggerPreviewRegeneration(selectedLayerIds)
+    })
 }
