@@ -3,7 +3,10 @@ import App from './main.svelte'
 import { mount } from 'svelte'
 import { uxp } from './globals'
 import { timelineService } from './services/timeline-service'
-import { getTimelineWebviewAPI } from './services/webview-ref'
+import {
+    getTimelineWebviewAPI,
+    getPreviewWebviewAPI
+} from './services/webview-ref'
 import type { ThemeName } from '../webview-ui/src/stores/themeStore'
 import type { UIScale } from '../webview-ui/src/stores/uiScaleStore'
 
@@ -149,6 +152,32 @@ if (typeof process !== 'undefined' && process?.version?.includes('uxp')) {
                         }
                     } catch (err) {
                         console.error('[Command] Next Frame error:', err)
+                    }
+                }
+            },
+            playPause: {
+                async run() {
+                    console.log('[Command] Play/Pause')
+                    try {
+                        const api = getPreviewWebviewAPI()
+                        if (api) {
+                            await api.previewPlayPause()
+                        }
+                    } catch (err) {
+                        console.error('[Command] Play/Pause error:', err)
+                    }
+                }
+            },
+            playStop: {
+                async run() {
+                    console.log('[Command] Play/Stop')
+                    try {
+                        const api = getPreviewWebviewAPI()
+                        if (api) {
+                            await api.previewPlayStop()
+                        }
+                    } catch (err) {
+                        console.error('[Command] Play/Stop error:', err)
                     }
                 }
             }

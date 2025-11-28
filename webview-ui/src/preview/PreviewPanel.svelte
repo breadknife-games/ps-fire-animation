@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { onDestroy, untrack } from 'svelte'
+    import { onDestroy, onMount, untrack } from 'svelte'
     import IconButton from '../timeline/components/IconButton.svelte'
     import IconPlay from '../lib/components/icons/IconPlay.svelte'
     import IconPause from '../lib/components/icons/IconPause.svelte'
@@ -15,6 +15,7 @@
     } from '../stores/previewStore.svelte'
     import { generateGif, downloadGif } from '../lib/gif-generator'
     import { getApiClient } from '../lib/api-client'
+    import { registerPreviewControls } from '../stores/previewControlStore.svelte'
 
     const defaultLoadingState: PreviewLoadingStatus = {
         phase: 'idle',
@@ -149,6 +150,7 @@
     function handlePlay() {
         if (!canNavigate || isPlaying) return
         isPlaying = true
+        currentFrameIndex = 0
         playInterval = window.setInterval(() => {
             currentFrameIndex =
                 currentFrameIndex < frames.length - 1
@@ -182,6 +184,33 @@
             currentFrameIndex = 0
         }
     }
+
+    function handlePlayPause() {
+        if (isPlaying) {
+            handlePause()
+        } else {
+            handlePlay()
+        }
+    }
+
+    function handlePlayStop() {
+        if (isPlaying) {
+            handleStop()
+        } else {
+            handlePlay()
+        }
+    }
+
+    // Register playback controls on mount so commands can trigger them
+    onMount(() => {
+        registerPreviewControls({
+            play: handlePlay,
+            pause: handlePause,
+            stop: handleStop,
+            playPause: handlePlayPause,
+            playStop: handlePlayStop
+        })
+    })
 
     async function handleDownloadGif() {
         if (!canNavigate || isDownloading) return
