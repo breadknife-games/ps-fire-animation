@@ -12,6 +12,7 @@ import {
     setUIScale as setUIScaleStore,
     type UIScale
 } from './stores/uiScaleStore'
+import { previewPlaybackControl } from './stores/previewControlStore.svelte'
 
 export const receiveTimelineState = (state: TimelineState) => {
     console.log('receiveTimelineState !!!!!')
@@ -53,4 +54,14 @@ export const updatePreviewSelectedFrame = (selectedFrameId: string | null) => {
     if (selectedFrameId) {
         updatePreviewSelection(selectedFrameId)
     }
+}
+
+export const previewPlayPause = () => {
+    console.log('[webview-api] previewPlayPause called')
+    previewPlaybackControl.playPause()
+}
+
+export const previewPlayStop = () => {
+    console.log('[webview-api] previewPlayStop called')
+    previewPlaybackControl.playStop()
 }

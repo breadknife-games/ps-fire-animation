@@ -91,6 +91,20 @@ const manifest: UXP_Manifest = {
             label: {
                 default: 'Next Frame'
             }
+        },
+        {
+            type: 'command',
+            id: 'playPause',
+            label: {
+                default: 'Play/Pause Preview'
+            }
+        },
+        {
+            type: 'command',
+            id: 'playStop',
+            label: {
+                default: 'Play/Stop Preview'
+            }
         }
     ],
     featureFlags: {
