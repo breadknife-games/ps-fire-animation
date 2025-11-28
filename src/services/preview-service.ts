@@ -14,12 +14,34 @@ const DEFAULT_PREVIEW_RESOLUTION = 720
 export const previewService = {
     getPreviewState: getPreviewState,
     renderPreviewFrame: renderPreviewFrame,
-    triggerPreviewRegeneration: triggerPreviewRegeneration
+    triggerPreviewRegeneration: triggerPreviewRegeneration,
+    setPreviewSettings: setPreviewSettings
+}
+
+async function setPreviewSettings(fps: number, repeat: boolean): Promise<void> {
+    const document = FireDocument.current
+    const settingsJson = JSON.stringify({ fps, repeat })
+    await document.setXmpData('previewSettings', settingsJson)
 }
 
 async function getPreviewState(): Promise<PreviewState> {
     const document = FireDocument.current
     const frames = collectPreviewFrames(document.getLayers())
+
+    // Get preview settings from XMP metadata
+    const settingsJson = document.getXmpData('previewSettings')
+    let fps = 12
+    let repeat = true
+
+    if (settingsJson) {
+        try {
+            const settings = JSON.parse(settingsJson)
+            fps = settings.fps ?? 12
+            repeat = settings.repeat ?? true
+        } catch (error) {
+            console.error('Failed to parse preview settings from XMP:', error)
+        }
+    }
 
     return {
         frames: frames.map(frame => ({
@@ -33,7 +55,9 @@ async function getPreviewState(): Promise<PreviewState> {
             )?.id ?? '',
         aspectRatio: document.aspectRatio,
         documentId: document.id,
-        updatedAt: Date.now()
+        updatedAt: Date.now(),
+        fps,
+        repeat
     }
 }
 

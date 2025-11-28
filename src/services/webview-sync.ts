@@ -63,4 +63,9 @@ export async function bindPreviewWebview() {
         const selectedLayerIds = FireDocument.current.getSelectedLayerIds()
         await previewService.triggerPreviewRegeneration(selectedLayerIds)
     })
+
+    // Reload preview when switching documents to load document-specific settings
+    await FireListeners.addSelectDocumentListener(async () => {
+        await previewService.triggerPreviewRegeneration()
+    })
 }

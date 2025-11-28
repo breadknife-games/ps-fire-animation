@@ -4,6 +4,14 @@ import { FireLayer, psLayerProperties } from './layer'
 import type { PSLayer } from './layer'
 import type { ActionDescriptor } from 'photoshop/dom/CoreModules'
 
+// Import UXP XMP API
+const uxp = require('uxp')
+const { XMPMeta } = uxp.xmp
+
+// Custom namespace for Fire Animation plugin
+const FIRE_NAMESPACE = 'ps-fire-animation'
+const FIRE_PREFIX = 'fire'
+
 export class FireDocument {
     public readonly id: number
     public readonly width: number
@@ -373,5 +381,131 @@ export class FireDocument {
             result = await fn()
         }, name)
         return result!
+    }
+
+    /**
+     * Get XMP property from document metadata
+     * @param propertyName - The property name in the Fire namespace
+     * @returns The property value, or null if not found
+     */
+    getXmpData(propertyName: string): string | null {
+        try {
+            // Get XMP metadata from document
+            const result = ps.action.batchPlay(
+                [
+                    {
+                        _obj: 'get',
+                        _target: [
+                            {
+                                _ref: 'property',
+                                _property: 'XMPMetadataAsUTF8'
+                            },
+                            { _ref: 'document', _id: this.id }
+                        ]
+                    }
+                ],
+                { synchronousExecution: true }
+            ) as unknown as { XMPMetadataAsUTF8?: string }[]
+
+            const xmpString = result[0]?.XMPMetadataAsUTF8
+
+            if (xmpString) {
+                // Parse XMP using UXP XMP API
+                const xmpMeta = new XMPMeta(xmpString)
+
+                // Register our custom namespace
+                XMPMeta.registerNamespace(FIRE_NAMESPACE, FIRE_PREFIX)
+
+                // Try to get the property
+                if (xmpMeta.doesPropertyExist(FIRE_NAMESPACE, propertyName)) {
+                    const property = xmpMeta.getProperty(
+                        FIRE_NAMESPACE,
+                        propertyName
+                    )
+                    return property.value
+                }
+            }
+        } catch (error) {
+            console.error(
+                `Failed to get XMP property "${propertyName}":`,
+                error
+            )
+        }
+
+        return null
+    }
+
+    /**
+     * Set XMP property in document metadata
+     * @param propertyName - The property name in the Fire namespace
+     * @param value - The property value to set
+     */
+    async setXmpData(propertyName: string, value: string): Promise<void> {
+        try {
+            await ps.core.executeAsModal(
+                async () => {
+                    // Get current XMP metadata
+                    const result = ps.action.batchPlay(
+                        [
+                            {
+                                _obj: 'get',
+                                _target: [
+                                    {
+                                        _ref: 'property',
+                                        _property: 'XMPMetadataAsUTF8'
+                                    },
+                                    { _ref: 'document', _id: this.id }
+                                ]
+                            }
+                        ],
+                        { synchronousExecution: true }
+                    ) as unknown as { XMPMetadataAsUTF8?: string }[]
+
+                    const xmpString = result[0]?.XMPMetadataAsUTF8 || ''
+
+                    // Create or parse XMP metadata
+                    const xmpMeta = xmpString
+                        ? new XMPMeta(xmpString)
+                        : new XMPMeta()
+
+                    // Register our custom namespace
+                    XMPMeta.registerNamespace(FIRE_NAMESPACE, FIRE_PREFIX)
+
+                    // Set the property
+                    xmpMeta.setProperty(FIRE_NAMESPACE, propertyName, value)
+
+                    // Serialize back to string
+                    const updatedXmpString = xmpMeta.serialize()
+
+                    // Set the updated XMP back to the document
+                    ps.action.batchPlay(
+                        [
+                            {
+                                _obj: 'set',
+                                _target: [
+                                    {
+                                        _ref: 'property',
+                                        _property: 'XMPMetadataAsUTF8'
+                                    },
+                                    { _ref: 'document', _id: this.id }
+                                ],
+                                to: {
+                                    _obj: 'document',
+                                    XMPMetadataAsUTF8: updatedXmpString
+                                }
+                            }
+                        ],
+                        { synchronousExecution: true }
+                    )
+                },
+                { commandName: 'Update Metadata' }
+            )
+        } catch (error) {
+            console.error(
+                `Failed to set XMP property "${propertyName}":`,
+                error
+            )
+            throw error
+        }
     }
 }

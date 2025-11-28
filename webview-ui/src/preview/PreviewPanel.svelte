@@ -14,6 +14,7 @@
         type PreviewLoadingStatus
     } from '../stores/previewStore.svelte'
     import { generateGif, downloadGif } from '../lib/gif-generator'
+    import { getApiClient } from '../lib/api-client'
 
     const defaultLoadingState: PreviewLoadingStatus = {
         phase: 'idle',
@@ -25,8 +26,8 @@
     }
 
     let isPlaying = $state<boolean>(false)
-    let repeat = $state<boolean>(true)
-    let fps = $state<number>(12)
+    let repeat = $state<boolean>(previewState.state?.repeat ?? true)
+    let fps = $state<number>(previewState.state?.fps ?? 12)
     let fpsDropdownOpen = $state<boolean>(false)
     let customFpsInput = $state<string>('12')
     let playInterval: number | null = null
@@ -65,6 +66,14 @@
         frames
         if (untrack(() => isPlaying)) {
             handleStop()
+        }
+    })
+
+    // Sync fps and repeat from previewState when it changes
+    $effect(() => {
+        if (previewState.state) {
+            repeat = previewState.state.repeat
+            fps = previewState.state.fps
         }
     })
 
@@ -224,6 +233,8 @@
     function setFpsPreset(value: number) {
         fps = value
         closeFpsDropdown()
+        // Save to document
+        savePreviewSettings(fps, repeat)
         // Restart playback with new FPS if currently playing
         if (isPlaying) {
             handlePause()
@@ -236,6 +247,8 @@
         if (!isNaN(value) && value >= 1 && value <= 60) {
             fps = value
             closeFpsDropdown()
+            // Save to document
+            savePreviewSettings(fps, repeat)
             // Restart playback with new FPS if currently playing
             if (isPlaying) {
                 handlePause()
@@ -253,6 +266,19 @@
     function formatProgressValue(progress: number) {
         if (!Number.isFinite(progress)) return 0
         return Math.min(100, Math.max(0, Math.round(progress * 100)))
+    }
+
+    function savePreviewSettings(fps: number, repeat: boolean) {
+        const api = getApiClient()
+        void api.previewSetSettings(fps, repeat).catch(err => {
+            console.error('Failed to save preview settings:', err)
+        })
+    }
+
+    function handleRepeatToggle() {
+        repeat = !repeat
+        // Save to document
+        savePreviewSettings(fps, repeat)
     }
 </script>
 
@@ -306,7 +332,7 @@
         <div class="flex items-center gap-1">
             <button
                 type="button"
-                onclick={() => (repeat = !repeat)}
+                onclick={handleRepeatToggle}
                 title={repeat ? 'Repeat enabled' : 'Play once'}
                 class={`inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md border transition ${
                     repeat

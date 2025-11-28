@@ -10,6 +10,8 @@ export interface PreviewState {
     aspectRatio: number
     documentId: number | null
     updatedAt: number
+    fps: number
+    repeat: boolean
 }
 
 export interface PreviewFrameImagePayload {
