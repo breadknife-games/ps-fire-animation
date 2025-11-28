@@ -50,7 +50,7 @@ export async function bindTimelineWebview(api: WebviewAPI) {
     })
 }
 
-export async function bindPreviewWebview() {
+export async function bindPreviewWebview(api: WebviewAPI) {
     await previewService.triggerPreviewRegeneration()
 
     await FireListeners.addHistoryStateListener(async () => {
@@ -58,10 +58,20 @@ export async function bindPreviewWebview() {
         await previewService.triggerPreviewRegeneration(selectedLayerIds)
     })
 
-    // Also regenerate frames when layer visibility changes
+    // Regenerate frames when layer visibility changes
     await FireListeners.addLayerVisibilityChangeListener(async () => {
         const selectedLayerIds = FireDocument.current.getSelectedLayerIds()
         await previewService.triggerPreviewRegeneration(selectedLayerIds)
+    })
+
+    // Update preview state when layer selection changes (for timeline -> preview sync)
+    await FireListeners.addLayerSelectListener(async () => {
+        try {
+            const state = await previewService.getPreviewState()
+            await api.updatePreviewSelectedFrame(state.selectedFrameId)
+        } catch (error) {
+            console.error('[Preview] Failed to update selected frame', error)
+        }
     })
 
     // Reload preview when switching documents to load document-specific settings
