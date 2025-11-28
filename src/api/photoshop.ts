@@ -1,4 +1,5 @@
 import { photoshop } from '../globals'
+import { previewService } from '../services/preview-service'
 import { timelineService } from '../services/timeline-service'
 
 export const notify = async (message: string) => {
@@ -69,6 +70,6 @@ export const timelineCreateVideoGroup = (
 export const timelineNormalize = () => timelineService.normalizeTimeline()
 export const timelineCreateVideoTimeline = () =>
     timelineService.createVideoTimeline()
-export const previewGetState = () => timelineService.getPreviewState()
-export const previewRenderFrame = (order: number, resolution?: number) =>
-    timelineService.renderPreviewFrame(order, resolution)
+export const previewGetState = () => previewService.getPreviewState()
+export const previewRenderFrame = (frameId: string, resolution?: number) =>
+    previewService.renderPreviewFrame(frameId, resolution)

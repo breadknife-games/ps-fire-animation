@@ -40,26 +40,3 @@ export interface LayerThumbnailPayload {
     fullWidth: number
     fullHeight: number
 }
-
-export interface PreviewFrameDTO {
-    layerId: number
-    name: string
-    order: number
-    delayMs: number
-}
-
-export interface PreviewState {
-    frames: PreviewFrameDTO[]
-    selectedFrameId: number | null
-    aspectRatio: number
-    documentId: number | null
-    updatedAt: number
-}
-
-export interface PreviewFrameImagePayload {
-    order: number
-    frameId: number | null
-    width: number
-    height: number
-    base64: string
-}

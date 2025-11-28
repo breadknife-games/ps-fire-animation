@@ -8,18 +8,11 @@
     import IconDownload from '../lib/components/icons/IconDownload.svelte'
     import IconArrowLeft from '../lib/components/icons/IconArrowLeft.svelte'
     import IconArrowRight from '../lib/components/icons/IconArrowRight.svelte'
-    import type {
-        PreviewFrameDTO,
-        PreviewState
-    } from '../../../src/shared/timeline'
     import {
-        frameImages,
         loadPreviewState,
-        previewLoadingState,
         previewState,
-        type PreviewLoadingPhase,
         type PreviewLoadingStatus
-    } from '../stores/previewStore'
+    } from '../stores/previewStore.svelte'
     import { generateGif, downloadGif } from '../lib/gif-generator'
 
     const defaultLoadingState: PreviewLoadingStatus = {
@@ -31,28 +24,6 @@
         error: null
     }
 
-    let previewData = $state<PreviewState | null>(null)
-    let imageData = $state<Record<number, string>>({})
-    let loadingInfo = $state<PreviewLoadingStatus>(defaultLoadingState)
-
-    const unsubscribePreview = previewState.subscribe(
-        value => (previewData = value)
-    )
-    const unsubscribeImages = frameImages.subscribe(
-        value => (imageData = value)
-    )
-    const unsubscribeLoading = previewLoadingState.subscribe(
-        value => (loadingInfo = value)
-    )
-
-    onDestroy(() => {
-        unsubscribePreview()
-        unsubscribeImages()
-        unsubscribeLoading()
-    })
-
-    // let selectedOrder = $state<number>(0)
-    let frames = $state<PreviewFrameDTO[]>([])
     let isPlaying = $state<boolean>(false)
     let repeat = $state<boolean>(true)
     let fps = $state<number>(12)
@@ -62,10 +33,8 @@
     let currentFrameIndex = $state<number>(0)
     let thumbnailRefs: Map<number, HTMLButtonElement> = new Map()
     let isDownloading = $state<boolean>(false)
-
-    $effect(() => {
-        frames = previewData?.frames ?? []
-    })
+    let loadingInfo = $derived(previewState.loadingState)
+    let frames = $derived(previewState.state?.frames ?? [])
 
     // Scroll selected thumbnail into view when not playing
     $effect(() => {
@@ -95,19 +64,17 @@
     $effect(() => {
         frames
         if (untrack(() => isPlaying)) {
-            console.log('Frames changed, stopping playback')
             handleStop()
         }
     })
 
-    // const selectedFrameIndex = $derived(
-    //     frames.findIndex(frame => frame.order === selectedOrder)
-    // )
     const currentFrame = $derived(frames[currentFrameIndex])
     const currentImage = $derived(
-        currentFrame ? (imageData[currentFrame.order] ?? '') : ''
+        currentFrame ? (previewState.frameImages[currentFrame.id] ?? '') : ''
     )
-    const progressPercent = $derived(formatProgressValue(loadingInfo.progress))
+    const progressPercent = $derived(
+        formatProgressValue(previewState.loadingState.progress)
+    )
     const canNavigate = $derived(frames.length > 0)
 
     function handleSelectFrame(index: number) {
@@ -176,7 +143,7 @@
         isDownloading = true
 
         // Set loading state to show progress bar
-        loadingInfo = {
+        previewState.loadingState = {
             phase: 'loading',
             message: 'Generating GIF...',
             progress: 0,
@@ -187,7 +154,9 @@
 
         try {
             // Get all frame images in order
-            const imageSources = frames.map(frame => imageData[frame.order])
+            const imageSources = frames.map(
+                frame => previewState.frameImages[frame.id]
+            )
 
             // Check if all images are loaded
             if (imageSources.some(src => !src)) {
@@ -205,7 +174,7 @@
                 fps,
                 repeat: repeat ? 0 : 1, // 0 = infinite loop, 1 = play once
                 onProgress: (current, total) => {
-                    loadingInfo = {
+                    previewState.loadingState = {
                         phase: 'loading',
                         message: `Generating GIF frame ${current + 1} of ${total}...`,
                         progress: (current + 1) / total,
@@ -220,10 +189,10 @@
             downloadGif(gifBlob, filename)
 
             // Reset loading state
-            loadingInfo = defaultLoadingState
+            previewState.loadingState = defaultLoadingState
         } catch (error) {
             console.error('Failed to download GIF:', error)
-            loadingInfo = {
+            previewState.loadingState = {
                 phase: 'error',
                 message: 'Failed to generate GIF',
                 progress: 0,
@@ -234,7 +203,7 @@
 
             // Clear error after 3 seconds
             setTimeout(() => {
-                loadingInfo = defaultLoadingState
+                previewState.loadingState = defaultLoadingState
             }, 3000)
         } finally {
             isDownloading = false
@@ -281,44 +250,14 @@
         }
     })
 
-    function formatPhaseLabel(phase: PreviewLoadingPhase) {
-        switch (phase) {
-            case 'loading':
-                return 'Rendering'
-            case 'ready':
-                return 'Ready'
-            case 'empty':
-                return 'No Frames'
-            case 'error':
-                return 'Error'
-            default:
-                return 'Idle'
-        }
-    }
-
     function formatProgressValue(progress: number) {
         if (!Number.isFinite(progress)) return 0
         return Math.min(100, Math.max(0, Math.round(progress * 100)))
     }
-
-    function getPhaseAccentClass(phase: PreviewLoadingPhase) {
-        switch (phase) {
-            case 'ready':
-                return 'text-timeline-foreground'
-            case 'loading':
-                return 'text-timeline-muted'
-            case 'empty':
-                return 'text-timeline-muted'
-            case 'error':
-                return 'text-red-300'
-            default:
-                return 'text-timeline-muted'
-        }
-    }
 </script>
 
 <div
-    class="flex min-h-0 flex-1 flex-col bg-timeline-surface-2 text-timeline-foreground">
+    class="flex min-h-0 flex-1 h-full flex-col bg-timeline-surface-2 text-timeline-foreground">
     <div
         class="flex shrink-0 items-center justify-between border-b border-timeline-border bg-timeline-surface-1 px-2 py-1.5">
         <div class="flex items-center gap-1">
@@ -443,7 +382,7 @@
 
     <div
         class="relative h-1 w-full overflow-hidden bg-timeline-surface-2"
-        class:opacity-0={loadingInfo.phase !== 'loading'}>
+        class:opacity-0={previewState.loadingState.phase !== 'loading'}>
         <div
             class="h-full bg-timeline-playhead"
             class:transition-none={loadingInfo.phase !== 'loading'}
@@ -471,10 +410,18 @@
         <div class="flex min-h-0 flex-1 flex-col gap-3">
             <div class="relative flex flex-1 items-center justify-center">
                 {#if frames.length}
-                    <img
-                        src={currentImage}
-                        alt="Preview frame"
-                        class="max-h-full max-w-full select-none object-contain rounded-md" />
+                    {#if currentImage}
+                        <img
+                            src={currentImage}
+                            alt="Preview frame"
+                            class="max-h-full max-w-full select-none object-contain rounded-md" />
+                    {:else}
+                        <div class="flex items-center justify-center">
+                            <span
+                                class="h-8 w-8 animate-spin rounded-full border-4 border-timeline-border/30 border-t-timeline-playhead"
+                            ></span>
+                        </div>
+                    {/if}
                     {#if !isPlaying}
                         <div
                             class="absolute right-2 top-2 rounded bg-black/65 px-2 py-1 text-[10px] font-medium text-white">
@@ -491,6 +438,8 @@
             {#if frames.length}
                 <div class="flex gap-2 overflow-x-auto">
                     {#each frames as frame, index}
+                        {@const thumbnailSrc =
+                            previewState.frameImages[frame.id] ?? ''}
                         <button
                             type="button"
                             use:setThumbnailRef={index}
@@ -502,13 +451,16 @@
                             title={`Frame ${index + 1}`}
                             aria-pressed={index === currentFrameIndex}
                             onclick={() => handleSelectFrame(index)}>
-                            <div
-                                class="relative w-[60px] overflow-hidden rounded-sm border border-timeline-border/30 bg-white/85">
-                                {#if imageData[frame.order]}
+                            <div class="relative inline-block w-[60px]">
+                                {#if thumbnailSrc}
                                     <img
-                                        src={imageData[frame.order]}
+                                        src={thumbnailSrc}
                                         alt={`Frame ${index + 1} thumbnail`}
-                                        class="h-full w-full select-none object-contain bg-white" />
+                                        class="w-full select-none object-contain bg-white rounded-sm border border-timeline-border/30" />
+                                    <div
+                                        class="pointer-events-none absolute left-0.5 top-0.5 rounded bg-black/65 px-1 text-[9px] font-medium leading-tight text-white">
+                                        {index + 1}
+                                    </div>
                                 {:else}
                                     <div
                                         class="flex h-full w-full items-center justify-center text-timeline-muted">
@@ -517,10 +469,6 @@
                                         ></span>
                                     </div>
                                 {/if}
-                                <div
-                                    class="pointer-events-none absolute left-0.5 top-0.5 rounded bg-black/65 px-1 text-[9px] font-medium leading-tight text-white">
-                                    {index + 1}
-                                </div>
                             </div>
                         </button>
                     {/each}

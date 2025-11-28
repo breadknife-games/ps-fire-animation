@@ -1,21 +1,22 @@
-import type {
-    LayerThumbnailPayload,
-    PreviewFrameDTO,
-    PreviewFrameImagePayload,
-    PreviewState,
-    TimelineFrameDTO,
-    TimelineRowDTO,
-    TimelineState
+import {
+    type LayerThumbnailPayload,
+    type TimelineFrameDTO,
+    type TimelineRowDTO,
+    type TimelineState
 } from '../shared/timeline'
 import { FireDocument } from '../api/photoshop/document'
-import { FireLayer, FireLayerType, findLayerById } from '../api/photoshop/layer'
+import {
+    FireLayer,
+    FireLayerType,
+    findLayerById,
+    findLayerWithParent
+} from '../api/photoshop/layer'
 import type { FireLayerTrimmedBase64ImageData } from '../api/photoshop/layer'
 import { Timeline as PSTimeline } from '../api/photoshop/timeline'
-import { photoshop as ps } from '../globals'
+import { getPreviewWebviewAPI } from './webview-ref'
+import { previewService } from './preview-service'
 
 const DEFAULT_THUMBNAIL_RESOLUTION = 360
-const DEFAULT_FRAME_DELAY = 100
-const DEFAULT_PREVIEW_RESOLUTION = 720
 
 const toHex = (color?: { hex: string } | null) =>
     color?.hex?.length ? color.hex : ''
@@ -34,8 +35,6 @@ export const timelineService = {
     deleteLayer,
     getLayerThumbnail,
     setPlayheadIndex,
-    getPreviewState,
-    renderPreviewFrame,
     toggleOnionSkin,
     openOnionSkinSettings,
     moveLayer,
@@ -102,6 +101,10 @@ async function setLayerVisibility(
 ): Promise<TimelineState> {
     const layer = await resolveLayer(layerId)
     await layer.setVisible(visible)
+
+    // Trigger preview regeneration after visibility change
+    await previewService.triggerPreviewRegeneration()
+
     return getState()
 }
 
@@ -132,6 +135,10 @@ async function insertEmptyFrameBefore(
     // Move the new frame before the anchor in timeline
     // Timeline order is reversed from layer stack, so "before" = "below" in layer stack
     await layer.document.moveLayer(newFrame.id, anchorLayerId, 'below')
+
+    // Trigger preview regeneration - new frame affects preview
+    await previewService.triggerPreviewRegeneration([newFrame.id])
+
     return getState()
 }
 
@@ -140,7 +147,11 @@ async function insertEmptyFrameAfter(
 ): Promise<TimelineState> {
     const layer = await resolveLayer(anchorLayerId)
     await layer.select()
-    await layer.document.createFrame()
+    const newFrame = await layer.document.createFrame()
+
+    // Trigger preview regeneration - new frame affects preview
+    await previewService.triggerPreviewRegeneration([newFrame.id])
+
     return getState()
 }
 
@@ -150,24 +161,40 @@ async function duplicateFrameBefore(layerId: number): Promise<TimelineState> {
     // Move the duplicate before the original in timeline
     // Timeline order is reversed from layer stack, so "before" = "below" in layer stack
     await layer.document.moveLayer(duplicated.id, layerId, 'below')
+
+    // Trigger preview regeneration - new duplicate frame affects preview
+    await previewService.triggerPreviewRegeneration([duplicated.id])
+
     return getState()
 }
 
 async function duplicateFrameAfter(layerId: number): Promise<TimelineState> {
     const layer = await resolveLayer(layerId)
-    await layer.document.duplicateLayer(layer)
+    const duplicated = await layer.document.duplicateLayer(layer)
+
+    // Trigger preview regeneration - new duplicate frame affects preview
+    await previewService.triggerPreviewRegeneration([duplicated.id])
+
     return getState()
 }
 
 async function deleteFrame(layerId: number): Promise<TimelineState> {
     const layer = await resolveLayer(layerId)
     await layer.document.deleteLayer(layer)
+
+    // Trigger full preview regeneration - deleting affects frame count
+    await previewService.triggerPreviewRegeneration()
+
     return getState()
 }
 
 async function deleteLayer(layerId: number): Promise<TimelineState> {
     const layer = await resolveLayer(layerId)
     await layer.document.deleteLayer(layer)
+
+    // Trigger full preview regeneration - deleting affects preview
+    await previewService.triggerPreviewRegeneration()
+
     return getState()
 }
 
@@ -207,75 +234,6 @@ async function getLayerThumbnail(
         height: data.height,
         fullWidth: data.fullWidth,
         fullHeight: data.fullHeight
-    }
-}
-
-async function getPreviewState(): Promise<PreviewState> {
-    const document = FireDocument.current
-    const frames = collectPreviewFrames(document.getLayers())
-
-    return {
-        frames: frames.map((frame, index) => ({
-            layerId: frame.id,
-            name: frame.name,
-            order: index,
-            delayMs: DEFAULT_FRAME_DELAY
-        })),
-        selectedFrameId: document.currentLayerId ?? null,
-        aspectRatio: document.aspectRatio,
-        documentId: document.id,
-        updatedAt: Date.now()
-    }
-}
-
-async function renderPreviewFrame(
-    frameOrder: number,
-    resolution = DEFAULT_PREVIEW_RESOLUTION
-): Promise<PreviewFrameImagePayload> {
-    const document = FireDocument.current
-    const layers = document.getLayers()
-    const frames = collectPreviewFrames(layers)
-
-    if (!frames.length) {
-        return {
-            order: 0,
-            frameId: null,
-            width: 0,
-            height: 0,
-            base64: ''
-        }
-    }
-
-    const safeOrder = clampFrameOrder(frameOrder, frames.length)
-    const renderableLayers = collectRenderableLayers(layers)
-
-    if (!renderableLayers.length) {
-        return {
-            order: safeOrder,
-            frameId: frames[safeOrder]?.id ?? null,
-            width: 0,
-            height: 0,
-            base64: ''
-        }
-    }
-
-    const dimensions = computePreviewDimensions(document, resolution)
-    const buffer = await compositeFrame(
-        renderableLayers,
-        safeOrder,
-        dimensions.width,
-        dimensions.height
-    )
-    const base64 = buffer.length
-        ? await encodePreviewBuffer(buffer, dimensions.width, dimensions.height)
-        : ''
-
-    return {
-        order: safeOrder,
-        frameId: frames[safeOrder]?.id ?? null,
-        width: dimensions.width,
-        height: dimensions.height,
-        base64
     }
 }
 
@@ -352,171 +310,6 @@ async function syncPlayheadFromLayer(layer: FireLayer) {
     if (index >= 0) {
         await PSTimeline.setCurrentTime(index)
     }
-}
-
-function collectPreviewFrames(
-    layers: ReadonlyArray<FireLayer>,
-    acc: FireLayer[] = []
-): FireLayer[] {
-    for (const layer of layers) {
-        if (layer.type === FireLayerType.Video) {
-            const frames = [...layer.children].reverse()
-            for (const frame of frames) acc.push(frame as FireLayer)
-        } else if (layer.type === FireLayerType.Group) {
-            collectPreviewFrames(layer.children as FireLayer[], acc)
-        }
-    }
-    return acc
-}
-
-function collectRenderableLayers(
-    layers: ReadonlyArray<FireLayer>,
-    acc: FireLayer[] = []
-): FireLayer[] {
-    for (const layer of layers) {
-        if (!layer.visible) continue
-        if (layer.type === FireLayerType.Group) {
-            collectRenderableLayers(layer.children as FireLayer[], acc)
-            continue
-        }
-        if (
-            layer.type === FireLayerType.Layer ||
-            layer.type === FireLayerType.Video
-        ) {
-            acc.push(layer)
-        }
-    }
-    return acc
-}
-
-async function compositeFrame(
-    layers: ReadonlyArray<FireLayer>,
-    frameIndex: number,
-    width: number,
-    height: number
-): Promise<Uint8Array> {
-    const output = new Uint8Array(width * height * 3)
-    output.fill(255)
-    const renderStack = buildRenderStack(layers, frameIndex)
-
-    for (const layer of renderStack) {
-        const data = await layer.getUint8ArrayImageData(width, height)
-        if (
-            !data.data.length ||
-            data.fullWidth === 0 ||
-            data.fullHeight === 0
-        ) {
-            continue
-        }
-
-        const imgStartX = Math.floor((data.x / data.fullWidth) * width)
-        const imgStartY = Math.floor((data.y / data.fullHeight) * height)
-        const imgWidth = Math.floor((data.width / data.fullWidth) * width)
-        const imgHeight = Math.floor((data.height / data.fullHeight) * height)
-
-        if (imgWidth <= 0 || imgHeight <= 0) continue
-
-        for (let x = 0; x < imgWidth; x++) {
-            for (let y = 0; y < imgHeight; y++) {
-                const outPixel = x + imgStartX + (y + imgStartY) * width
-                if (outPixel < 0 || outPixel >= width * height) continue
-
-                const dataXPercent = imgWidth > 0 ? x / imgWidth : 0
-                const dataYPercent = imgHeight > 0 ? y / imgHeight : 0
-                const dataX = Math.floor(dataXPercent * width)
-                const dataY = Math.floor(dataYPercent * height)
-                const dataPixel = dataX + dataY * width
-
-                const r = data.data[dataPixel * 4]
-                const g = data.data[dataPixel * 4 + 1]
-                const b = data.data[dataPixel * 4 + 2]
-                const a = data.data[dataPixel * 4 + 3]
-
-                const alpha = a / 255
-                const alphaInv = 1 - alpha
-                output[outPixel * 3] =
-                    r * alpha + output[outPixel * 3] * alphaInv
-                output[outPixel * 3 + 1] =
-                    g * alpha + output[outPixel * 3 + 1] * alphaInv
-                output[outPixel * 3 + 2] =
-                    b * alpha + output[outPixel * 3 + 2] * alphaInv
-            }
-        }
-    }
-
-    return output
-}
-
-function buildRenderStack(
-    layers: ReadonlyArray<FireLayer>,
-    frameIndex: number
-): FireLayer[] {
-    return layers
-        .map(layer => {
-            if (layer.type !== FireLayerType.Video) return layer
-            return selectVideoFrameLayer(layer, frameIndex)
-        })
-        .filter((layer): layer is FireLayer => Boolean(layer))
-        .reverse()
-}
-
-function selectVideoFrameLayer(
-    layer: FireLayer,
-    frameIndex: number
-): FireLayer | null {
-    if (!layer.children.length) return null
-    const frames = [...layer.children].reverse() as FireLayer[]
-    return frames[frameIndex] ?? null
-}
-
-async function encodePreviewBuffer(
-    buffer: Uint8Array,
-    width: number,
-    height: number
-): Promise<string> {
-    if (!buffer.length) return ''
-    const imageData = await ps.imaging.createImageDataFromBuffer(buffer, {
-        width,
-        height,
-        components: 3,
-        chunky: true,
-        colorSpace: 'RGB'
-    })
-
-    try {
-        const base64 = (await ps.imaging.encodeImageData({
-            imageData,
-            base64: true
-        })) as string
-        return `data:image/png;base64,${base64}`
-    } finally {
-        if (typeof imageData?.dispose === 'function') {
-            await imageData.dispose()
-        }
-    }
-}
-
-function computePreviewDimensions(
-    document: FireDocument,
-    resolution: number
-): { width: number; height: number } {
-    const aspectRatio = document.width / Math.max(1, document.height)
-    if (aspectRatio >= 1) {
-        return {
-            width: resolution,
-            height: Math.max(1, Math.round(resolution / aspectRatio))
-        }
-    }
-    return {
-        width: Math.max(1, Math.round(resolution * aspectRatio)),
-        height: resolution
-    }
-}
-
-function clampFrameOrder(order: number, total: number) {
-    if (total <= 0) return 0
-    if (!Number.isFinite(order)) return 0
-    return Math.min(Math.max(Math.floor(order), 0), total - 1)
 }
 
 async function toggleOnionSkin(): Promise<void> {
@@ -602,6 +395,10 @@ async function moveLayer(
 ): Promise<TimelineState> {
     const document = FireDocument.current
     await document.moveLayer(layerId, targetLayerId, position)
+
+    // Trigger full preview regeneration - moving layers can affect frame order
+    await previewService.triggerPreviewRegeneration()
+
     return getState()
 }
 
@@ -620,6 +417,10 @@ async function moveFrameLeft(layerId: number): Promise<TimelineState> {
 
     const targetSibling = siblings[currentIndex + 1]
     await layer.document.moveLayer(layerId, targetSibling.id, 'below')
+
+    // Trigger full preview regeneration - frame order changed
+    await previewService.triggerPreviewRegeneration()
+
     return getState()
 }
 
@@ -638,6 +439,10 @@ async function moveFrameRight(layerId: number): Promise<TimelineState> {
 
     const targetSibling = siblings[currentIndex - 1]
     await layer.document.moveLayer(layerId, targetSibling.id, 'above')
+
+    // Trigger full preview regeneration - frame order changed
+    await previewService.triggerPreviewRegeneration()
+
     return getState()
 }
 
@@ -651,6 +456,10 @@ async function createLayer(
     await document.moveLayer(newLayer.id, anchorLayerId, position)
     // Normalize the layer to span the full timeline (5000 frames)
     await PSTimeline.setLayerLength(newLayer.id, 5000)
+
+    // Trigger preview regeneration - new layer affects all frames
+    await previewService.triggerPreviewRegeneration([newLayer.id])
+
     return getState()
 }
 
@@ -673,6 +482,10 @@ async function createVideoGroup(
     const newGroup = await document.createVideoGroup()
     // Move the new group relative to the anchor layer
     await document.moveLayer(newGroup.id, anchorLayerId, position)
+
+    // Trigger full preview regeneration - new video group affects preview structure
+    await previewService.triggerPreviewRegeneration()
+
     return getState()
 }
 
