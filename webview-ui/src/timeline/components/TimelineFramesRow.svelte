@@ -9,10 +9,16 @@
     import { timelineSelectFrame } from '../../stores/timelineStore.svelte'
     import { untrack } from 'svelte'
 
-    const { row, frameRowWidth, visibleFrameWidth } = $props<{
+    const {
+        row,
+        frameRowWidth,
+        visibleFrameWidth,
+        parentHidden = false
+    } = $props<{
         row: TimelineRowDTO
         frameRowWidth: number
         visibleFrameWidth: number
+        parentHidden?: boolean
     }>()
 
     const { loadThumbnailsForRow, timelineState } = useTimelinePanelContext()
@@ -34,6 +40,7 @@
     const fullRowFrame = $derived(
         row.frames.length === 1 && row.frames[0].id === row.id
     )
+    const shouldGrayOut = $derived(!row.visible || parentHidden)
 
     $effect(() => {
         if (!expanded || !hasFrames) return
@@ -48,6 +55,7 @@
 <div class="flex flex-col">
     <div
         class="flex border-b border-timeline-border bg-timeline-surface-2"
+        class:opacity-30={shouldGrayOut}
         style={`min-width: ${frameRowWidth}px; height: ${rowHeight}px;`}>
         {#if hasFrames}
             {#each row.frames as frame}

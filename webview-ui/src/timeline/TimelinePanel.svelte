@@ -393,7 +393,8 @@
                     <TimelineFramesRow
                         row={item.row}
                         {frameRowWidth}
-                        {visibleFrameWidth} />
+                        {visibleFrameWidth}
+                        parentHidden={item.parentHidden} />
                 {/each}
             </div>
 
