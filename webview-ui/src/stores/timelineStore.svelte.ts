@@ -41,6 +41,12 @@ export async function toggleRowVisibility(layerId: number, visible: boolean) {
     timelineState.state = state
 }
 
+export async function soloLayer(layerId: number) {
+    const api = getApiClient()
+    const state = await api.timelineSoloLayer(layerId)
+    timelineState.state = state
+}
+
 export async function setLayerColor(layerId: number, colorValue: string) {
     const api = getApiClient()
     const state = await api.timelineSetLayerColor(layerId, colorValue)

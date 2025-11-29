@@ -25,6 +25,7 @@ export const timelineService = {
     getState,
     selectLayer,
     setLayerVisibility,
+    soloLayer,
     setLayerColor,
     renameLayer,
     insertEmptyFrameBefore,
@@ -120,6 +121,46 @@ async function setLayerVisibility(
     await layer.setVisible(visible)
 
     // Trigger preview regeneration after visibility change
+    await previewService.triggerPreviewRegeneration()
+
+    return getState()
+}
+
+async function soloLayer(layerId: number): Promise<TimelineState> {
+    const document = FireDocument.current
+    const rootLayers = document.getLayers()
+    const path = findLayerPath(rootLayers, layerId)
+
+    if (!path) {
+        throw new Error(`Layer ${layerId} not found for solo operation`)
+    }
+
+    const pathIds = new Set(path.map(layer => layer.id))
+
+    for (let i = 0; i < path.length; i++) {
+        const parent = i === 0 ? null : path[i - 1]
+        const siblings = parent
+            ? (parent.children as ReadonlyArray<FireLayer>)
+            : rootLayers
+
+        for (const sibling of siblings) {
+            if (pathIds.has(sibling.id)) {
+                if (!sibling.visible) {
+                    await sibling.setVisible(true)
+                }
+                continue
+            }
+
+            const isContainer =
+                sibling.type === FireLayerType.Group ||
+                sibling.type === FireLayerType.Video
+
+            if (isContainer && sibling.visible) {
+                await sibling.setVisible(false)
+            }
+        }
+    }
+
     await previewService.triggerPreviewRegeneration()
 
     return getState()
@@ -260,6 +301,30 @@ async function resolveLayer(layerId: number): Promise<FireLayer> {
     const layer = findLayerById(layers, layerId)
     if (!layer) throw new Error(`Layer ${layerId} not found`)
     return layer
+}
+
+function findLayerPath(
+    layers: ReadonlyArray<FireLayer>,
+    targetId: number,
+    currentPath: FireLayer[] = []
+): FireLayer[] | null {
+    for (const layer of layers) {
+        const nextPath = [...currentPath, layer]
+        if (layer.id === targetId) {
+            return nextPath
+        }
+        if (layer.children?.length) {
+            const found = findLayerPath(
+                layer.children as ReadonlyArray<FireLayer>,
+                targetId,
+                nextPath
+            )
+            if (found) {
+                return found
+            }
+        }
+    }
+    return null
 }
 
 function serializeLayer(

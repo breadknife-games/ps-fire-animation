@@ -16,6 +16,7 @@
     } from '../timelineContext'
     import {
         toggleRowVisibility,
+        soloLayer,
         setLayerColor,
         renameLayer,
         deleteLayer,
@@ -24,9 +25,14 @@
         createVideoGroup
     } from '../../stores/timelineStore.svelte'
 
-    const { row, depth = 0 } = $props<{
+    const {
+        row,
+        depth = 0,
+        parentHidden = false
+    } = $props<{
         row: TimelineRowDTO
         depth?: number
+        parentHidden?: boolean
     }>()
 
     const {
@@ -66,6 +72,7 @@
     const expanded = $derived(
         timelineState.expandedRows?.[row.id] ?? row.expanded ?? false
     )
+    const shouldGrayOut = $derived(!row.visible || parentHidden)
     const rowHeight = $derived(
         getRowHeight(
             row,
@@ -101,6 +108,10 @@
     async function handleVisibility(event: MouseEvent) {
         event.stopPropagation()
         await toggleRowVisibility(row.id, !row.visible)
+    }
+
+    async function handleSolo() {
+        await soloLayer(row.id)
     }
 
     function handleColorClick(event: MouseEvent) {
@@ -261,6 +272,15 @@
             separator: true
         },
         {
+            label: 'Solo',
+            action: () => handleSolo()
+        },
+        {
+            label: '',
+            action: () => {},
+            separator: true
+        },
+        {
             label: 'Delete',
             action: () => deleteLayer(row.id)
         }
@@ -325,7 +345,9 @@
             {:else}
                 <div class="w-5"></div>
             {/if}
-            <div class="shrink-0 text-timeline-muted">
+            <div
+                class="shrink-0 text-timeline-muted"
+                class:opacity-50={shouldGrayOut}>
                 {#if isVideo}
                     <IconAnimation class="h-3 w-3 fill-current" />
                 {:else if isGroup || isFolder}
@@ -343,6 +365,7 @@
                     bind:this={colorButtonEl}
                     type="button"
                     class="h-3 w-3 rounded-sm hover:ring-1 hover:ring-white/30"
+                    class:opacity-50={shouldGrayOut}
                     style={`background-color: ${row.colorHex || '#3a3a3a'};`}
                     title="Change layer color"
                     onclick={handleColorClick}></button>
@@ -353,6 +376,7 @@
                     bind:value={renameValue}
                     type="text"
                     class="min-w-0 flex-1 truncate rounded border border-timeline-border bg-timeline-surface-2 px-1 text-xs font-medium leading-4 text-timeline-foreground/90 outline-none focus:border-blue-500"
+                    class:opacity-50={shouldGrayOut}
                     onkeydown={handleRenameKeydown}
                     onblur={handleRenameBlur}
                     onclick={e => e.stopPropagation()} />
@@ -360,6 +384,7 @@
                 <!-- svelte-ignore a11y_no_static_element_interactions -->
                 <span
                     class="truncate rounded border border-transparent px-1 font-medium leading-4 text-timeline-foreground/90 cursor-text"
+                    class:opacity-50={shouldGrayOut}
                     data-rename-target
                     ondblclick={handleNameDoubleClick}
                     title="Double-click to rename">

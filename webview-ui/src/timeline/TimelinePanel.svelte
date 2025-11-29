@@ -378,7 +378,10 @@
                 class="sticky left-0 z-20 border-r border-timeline-border bg-timeline-surface-1"
                 style={`width: ${layerColWidth}px;`}>
                 {#each visibleRows as item}
-                    <TimelineLayersRow row={item.row} depth={item.depth} />
+                    <TimelineLayersRow
+                        row={item.row}
+                        depth={item.depth}
+                        parentHidden={item.parentHidden} />
                 {/each}
             </div>
 

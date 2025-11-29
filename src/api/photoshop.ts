@@ -21,6 +21,8 @@ export const timelineSelectLayer = (layerId: number) =>
     timelineService.selectLayer(layerId)
 export const timelineSetLayerVisibility = (layerId: number, visible: boolean) =>
     timelineService.setLayerVisibility(layerId, visible)
+export const timelineSoloLayer = (layerId: number) =>
+    timelineService.soloLayer(layerId)
 export const timelineSetLayerColor = (layerId: number, colorValue: string) =>
     timelineService.setLayerColor(layerId, colorValue)
 export const timelineRenameLayer = (layerId: number, name: string) =>

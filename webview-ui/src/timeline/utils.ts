@@ -100,6 +100,7 @@ export function getRowHeight(
 export interface VisibleRow {
   row: TimelineRowDTO;
   depth: number;
+  parentHidden: boolean;
 }
 
 export function flattenVisibleRows(
@@ -107,12 +108,14 @@ export function flattenVisibleRows(
   expandedMap: Record<number, boolean>,
   depth = 0,
   acc: VisibleRow[] = [],
+  parentHidden = false,
 ): VisibleRow[] {
   for (const row of sourceRows) {
-    acc.push({ row, depth });
+    const isHidden = !row.visible || parentHidden;
+    acc.push({ row, depth, parentHidden });
     const expanded = expandedMap[row.id] ?? row.expanded ?? false;
     if (row.children?.length && expanded) {
-      flattenVisibleRows(row.children, expandedMap, depth + 1, acc);
+      flattenVisibleRows(row.children, expandedMap, depth + 1, acc, isHidden);
     }
   }
   return acc;
