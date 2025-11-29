@@ -1,0 +1,96 @@
+name: CCX Release
+
+on:
+    push:
+        branches:
+            - main
+    workflow_dispatch:
+
+jobs:
+    build-and-release:
+        name: Build and Release CCX
+        runs-on: ubuntu-latest
+        permissions:
+            contents: write
+
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4
+
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: 20
+                  cache: npm
+                  cache-dependency-path: |
+                      package-lock.json
+                      webview-ui/package-lock.json
+
+            - name: Install dependencies (root)
+              run: npm install
+
+            - name: Install dependencies (webview-ui)
+              working-directory: webview-ui
+              run: npm install
+
+            - name: Build webview UI bundle
+              working-directory: webview-ui
+              run: npm run build
+
+            - name: Build CCX package
+              run: npm run ccx
+
+            - name: Get package version
+              id: package
+              run: echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
+
+            - name: Gather and rename CCX artifacts
+              run: |
+                  mkdir -p artifacts
+                  shopt -s nullglob
+                  for file in ccx/*.ccx; do
+                    # Get base filename without extension
+                    basename=$(basename "$file" .ccx)
+                    # Remove _PS suffix if present
+                    basename=${basename%_PS}
+                    # Add version to filename
+                    newname="${basename}-v${{ steps.package.outputs.version }}.ccx"
+                    cp "$file" "artifacts/$newname"
+                    echo "Renamed $file to artifacts/$newname"
+                  done
+                  ls -al artifacts
+
+            - name: Upload CCX build artifacts
+              uses: actions/upload-artifact@v4
+              with:
+                  name: ccx-packages
+                  path: artifacts/*.ccx
+                  if-no-files-found: error
+
+            - name: Compute release metadata
+              id: versioning
+              run: |
+                  SHORT_SHA=${GITHUB_SHA::7}
+                  TAG_NAME="v${{ steps.package.outputs.version }}"
+                  RELEASE_NAME="Fire Animation v${{ steps.package.outputs.version }}"
+                  {
+                    echo "tag_name=$TAG_NAME"
+                    echo "release_name=$RELEASE_NAME"
+                  } >> "$GITHUB_OUTPUT"
+
+            - name: Generate release notes
+              id: release_notes
+              run: |
+                  echo "## Commits in this release" > RELEASE_NOTES.md
+                  echo "" >> RELEASE_NOTES.md
+                  # Get the previous tag or use the root commit if no tags exist
+                  PREV_TAG=$(git describe --tags --abbrev=0 2>/dev/null || git rev-list --max-parents=0 HEAD)
+                  git log ${PREV_TAG}..HEAD --pretty=format:"* %s (%h)" >> RELEASE_NOTES.md || echo "* Initial release" >> RELEASE_NOTES.md
+
+            - name: Publish GitHub Release
+              uses: softprops/action-gh-release@v2
+              with:
+                  tag_name: ${{ steps.versioning.outputs.tag_name }}
+                  name: ${{ steps.versioning.outputs.release_name }}
+                  body_path: RELEASE_NOTES.md
+                  files: artifacts/*.ccx
