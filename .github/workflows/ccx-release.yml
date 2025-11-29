@@ -16,6 +16,8 @@ jobs:
         steps:
             - name: Checkout repository
               uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
 
             - name: Setup Node.js
               uses: actions/setup-node@v4
@@ -83,9 +85,7 @@ jobs:
               run: |
                   echo "## Commits in this release" > RELEASE_NOTES.md
                   echo "" >> RELEASE_NOTES.md
-                  # Get the previous tag or use the root commit if no tags exist
-                  PREV_TAG=$(git describe --tags --abbrev=0 2>/dev/null || git rev-list --max-parents=0 HEAD)
-                  git log ${PREV_TAG}..HEAD --pretty=format:"* %s (%h)" >> RELEASE_NOTES.md || echo "* Initial release" >> RELEASE_NOTES.md
+                  git log $(git describe --tags --abbrev=0 2>/dev/null || echo HEAD~20)..HEAD --pretty=format:"* %s (%h)" >> RELEASE_NOTES.md
 
             - name: Publish GitHub Release
               uses: softprops/action-gh-release@v2
