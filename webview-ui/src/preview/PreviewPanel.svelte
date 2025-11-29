@@ -63,10 +63,9 @@
         }
     })
 
-    // Stop playing if frames change
+    // Stop playback only when we lose all frames
     $effect(() => {
-        frames
-        if (untrack(() => isPlaying)) {
+        if (frames.length === 0 && untrack(() => isPlaying)) {
             handleStop()
         }
     })
@@ -489,7 +488,7 @@
         </div>
     </div>
 
-    <div class="flex flex-1 flex-col gap-3 bg-timeline-surface-2 p-3">
+    <div class="flex min-h-0 flex-1 flex-col gap-3 bg-timeline-surface-2 p-3">
         {#if loadingInfo.phase === 'error'}
             <div
                 class="rounded border border-red-500/30 bg-red-500/5 px-3 py-2 text-xs text-red-200">
@@ -504,26 +503,31 @@
         {/if}
 
         <div class="flex min-h-0 flex-1 flex-col gap-3">
-            <div class="relative flex flex-1 items-center justify-center">
+            <div
+                class="relative flex min-h-0 flex-1 items-center justify-center overflow-hidden">
                 {#if frames.length}
-                    {#if currentImage}
-                        <img
-                            src={currentImage}
-                            alt="Preview frame"
-                            class="max-h-full max-w-full select-none object-contain rounded-md" />
-                    {:else}
-                        <div class="flex items-center justify-center">
-                            <span
-                                class="h-8 w-8 animate-spin rounded-full border-4 border-timeline-border/30 border-t-timeline-playhead"
-                            ></span>
-                        </div>
-                    {/if}
-                    {#if !isPlaying}
-                        <div
-                            class="absolute right-2 top-2 rounded bg-black/65 px-2 py-1 text-[10px] font-medium text-white">
-                            {currentFrameIndex + 1} / {frames.length}
-                        </div>
-                    {/if}
+                    <div
+                        class="preview-stage relative flex h-full max-h-full w-full items-center justify-center">
+                        {#if currentImage}
+                            <img
+                                src={currentImage}
+                                alt="Preview frame"
+                                class="h-full w-full max-h-full max-w-full select-none rounded-md object-contain" />
+                        {:else}
+                            <div
+                                class="flex h-full w-full items-center justify-center">
+                                <span
+                                    class="h-8 w-8 animate-spin rounded-full border-4 border-timeline-border/30 border-t-timeline-playhead"
+                                ></span>
+                            </div>
+                        {/if}
+                        {#if !isPlaying}
+                            <div
+                                class="absolute right-2 top-2 rounded bg-black/65 px-2 py-1 text-[10px] font-medium text-white">
+                                {currentFrameIndex + 1} / {frames.length}
+                            </div>
+                        {/if}
+                    </div>
                 {:else}
                     <div class="text-center text-xs text-timeline-muted">
                         Build frames in the timeline to preview them here.
@@ -532,7 +536,7 @@
             </div>
 
             {#if frames.length}
-                <div class="flex gap-2 overflow-x-auto">
+                <div class="flex gap-2 overflow-x-auto shrink-0">
                     {#each frames as frame, index}
                         {@const thumbnailSrc =
                             previewState.frameImages[frame.id] ?? ''}

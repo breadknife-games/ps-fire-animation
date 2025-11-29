@@ -154,7 +154,7 @@ async function insertEmptyFrameBefore(
     await layer.document.moveLayer(newFrame.id, anchorLayerId, 'below')
 
     // Trigger preview regeneration - new frame affects preview
-    await previewService.triggerPreviewRegeneration([newFrame.id])
+    await previewService.triggerPreviewRegeneration()
 
     return getState()
 }
@@ -167,7 +167,7 @@ async function insertEmptyFrameAfter(
     const newFrame = await layer.document.createFrame()
 
     // Trigger preview regeneration - new frame affects preview
-    await previewService.triggerPreviewRegeneration([newFrame.id])
+    await previewService.triggerPreviewRegeneration()
 
     return getState()
 }
@@ -180,7 +180,7 @@ async function duplicateFrameBefore(layerId: number): Promise<TimelineState> {
     await layer.document.moveLayer(duplicated.id, layerId, 'below')
 
     // Trigger preview regeneration - new duplicate frame affects preview
-    await previewService.triggerPreviewRegeneration([duplicated.id])
+    await previewService.triggerPreviewRegeneration()
 
     return getState()
 }
@@ -190,7 +190,7 @@ async function duplicateFrameAfter(layerId: number): Promise<TimelineState> {
     const duplicated = await layer.document.duplicateLayer(layer)
 
     // Trigger preview regeneration - new duplicate frame affects preview
-    await previewService.triggerPreviewRegeneration([duplicated.id])
+    await previewService.triggerPreviewRegeneration()
 
     return getState()
 }
@@ -475,7 +475,7 @@ async function createLayer(
     await PSTimeline.setLayerLength(newLayer.id, 5000)
 
     // Trigger preview regeneration - new layer affects all frames
-    await previewService.triggerPreviewRegeneration([newLayer.id])
+    await previewService.triggerPreviewRegeneration()
 
     return getState()
 }

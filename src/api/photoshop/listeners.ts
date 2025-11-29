@@ -60,6 +60,20 @@ interface MakeDescriptor {
     }
 }
 
+interface MoveDescriptor {
+    _obj: 'move'
+    _target?: {
+        _ref: string
+    }[]
+}
+
+interface DeleteDescriptor {
+    _obj: 'delete'
+    _target?: {
+        _ref: string
+    }[]
+}
+
 async function addListener<T>(
     event: string,
     callback: (descriptor: T) => void
@@ -192,6 +206,22 @@ export class FireListeners {
                     descriptor.layerID
                 )
                 callback(descriptor.layerID)
+            }
+        })
+    }
+
+    static async addLayerDeleteListener(callback: () => void): Promise<void> {
+        await addListener<DeleteDescriptor>('delete', descriptor => {
+            if (descriptor?._target?.some(target => target._ref === 'layer')) {
+                callback()
+            }
+        })
+    }
+
+    static async addLayerMoveListener(callback: () => void): Promise<void> {
+        await addListener<MoveDescriptor>('move', descriptor => {
+            if (descriptor?._target?.some(target => target._ref === 'layer')) {
+                callback()
             }
         })
     }

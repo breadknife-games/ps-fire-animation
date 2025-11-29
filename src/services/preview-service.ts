@@ -120,6 +120,8 @@ async function triggerPreviewRegeneration(layerIds?: number[]): Promise<void> {
         return
     }
 
+    const hasLayerTargets = Array.isArray(layerIds) && layerIds.length > 0
+
     // Clear existing timer
     if (regenerationTimer) {
         clearTimeout(regenerationTimer)
@@ -127,11 +129,12 @@ async function triggerPreviewRegeneration(layerIds?: number[]): Promise<void> {
 
     // Debounce the regeneration
     regenerationTimer = setTimeout(async () => {
-        if (!layerIds) {
-            previewAPI.receivePreviewState(await getPreviewState())
-        }
-
         try {
+            if (!hasLayerTargets) {
+                previewAPI.receivePreviewState(await getPreviewState())
+                return
+            }
+
             const document = FireDocument.current
             const layers = document.getLayers()
             const frames = collectPreviewFrames(layers)
@@ -140,7 +143,10 @@ async function triggerPreviewRegeneration(layerIds?: number[]): Promise<void> {
                 frame.layers.some(layer => layerIds!.includes(layer.id))
             )
 
-            if (affectedFrames.length === frames.length) {
+            if (
+                affectedFrames.length === 0 ||
+                affectedFrames.length === frames.length
+            ) {
                 previewAPI.receivePreviewState(await getPreviewState())
             } else {
                 previewAPI.regeneratePreviewFrames(
@@ -149,6 +155,14 @@ async function triggerPreviewRegeneration(layerIds?: number[]): Promise<void> {
             }
         } catch (error) {
             console.error('[Preview] Failed to trigger regeneration:', error)
+            try {
+                previewAPI.receivePreviewState(await getPreviewState())
+            } catch (fallbackError) {
+                console.error(
+                    '[Preview] Failed to recover preview after error:',
+                    fallbackError
+                )
+            }
         }
     }, REGENERATION_DEBOUNCE_MS)
 }

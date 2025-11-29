@@ -18,16 +18,13 @@ const start = () =>
     })
 
 async function setTheme(theme: ThemeName) {
-    const api = getTimelineWebviewAPI()
-    if (api) {
-        try {
-            await api.setTheme(theme)
-            console.log('[Menu] Theme changed to:', theme)
-        } catch (error) {
-            console.error('[Menu] Failed to set theme:', error)
-        }
-    } else {
-        console.warn('[Menu] Webview API not ready for theme change')
+    const timelineAPI = getTimelineWebviewAPI()
+    const previewAPI = getPreviewWebviewAPI()
+    if (timelineAPI) {
+        timelineAPI.setTheme(theme)
+    }
+    if (previewAPI) {
+        previewAPI.setTheme(theme)
     }
 }
 
