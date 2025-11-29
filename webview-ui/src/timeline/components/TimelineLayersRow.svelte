@@ -255,6 +255,15 @@
 
     const contextMenuItems = $derived([
         {
+            label: 'Solo',
+            action: () => handleSolo()
+        },
+        {
+            label: '',
+            action: () => {},
+            separator: true
+        },
+        {
             label: 'New Layer',
             action: () => createLayer(row.id, 'below')
         },
@@ -265,15 +274,6 @@
         {
             label: 'New Frame Group',
             action: () => createVideoGroup(row.id, 'below')
-        },
-        {
-            label: '',
-            action: () => {},
-            separator: true
-        },
-        {
-            label: 'Solo',
-            action: () => handleSolo()
         },
         {
             label: '',

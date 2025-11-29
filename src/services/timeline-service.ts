@@ -26,6 +26,7 @@ export const timelineService = {
     selectLayer,
     setLayerVisibility,
     soloLayer,
+    makeAllVisible,
     setLayerColor,
     renameLayer,
     insertEmptyFrameBefore,
@@ -161,6 +162,30 @@ async function soloLayer(layerId: number): Promise<TimelineState> {
         }
     }
 
+    await previewService.triggerPreviewRegeneration()
+
+    return getState()
+}
+
+async function makeAllVisible(): Promise<TimelineState> {
+    const document = FireDocument.current
+    const layers = document.getLayers()
+
+    // Recursively make all layers visible
+    async function setVisibleRecursive(layers: ReadonlyArray<FireLayer>) {
+        for (const layer of layers) {
+            if (!layer.visible) {
+                await layer.setVisible(true)
+            }
+            if (layer.children?.length) {
+                await setVisibleRecursive(layer.children as FireLayer[])
+            }
+        }
+    }
+
+    await setVisibleRecursive(layers)
+
+    // Trigger preview regeneration after visibility change
     await previewService.triggerPreviewRegeneration()
 
     return getState()

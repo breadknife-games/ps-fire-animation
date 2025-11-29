@@ -47,6 +47,12 @@ export async function soloLayer(layerId: number) {
     timelineState.state = state
 }
 
+export async function makeAllVisible() {
+    const api = getApiClient()
+    const state = await api.timelineMakeAllVisible()
+    timelineState.state = state
+}
+
 export async function setLayerColor(layerId: number, colorValue: string) {
     const api = getApiClient()
     const state = await api.timelineSetLayerColor(layerId, colorValue)

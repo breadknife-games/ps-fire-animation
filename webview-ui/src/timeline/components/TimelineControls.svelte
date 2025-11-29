@@ -5,8 +5,10 @@
     import IconPageGear from '../../lib/components/icons/IconPageGear.svelte'
     import IconPreset from '../../lib/components/icons/IconPreset.svelte'
     import IconRewind from '../../lib/components/icons/IconRewind.svelte'
+    import IconVisibility from '../../lib/components/icons/IconVisibility.svelte'
     import IconButton from './IconButton.svelte'
     import {
+        makeAllVisible,
         openOnionSkinSettings,
         setPlayheadIndex,
         timelineSelectFrame,
@@ -68,6 +70,9 @@
     class="flex h-full items-center justify-center gap-1 bg-timeline-surface-1 px-2">
     <IconButton title="Collapse all" onClick={handleCollapseAll}>
         <IconCollapseAll class="h-3.5 w-3.5 fill-current" />
+    </IconButton>
+    <IconButton title="Make all visible" onClick={makeAllVisible}>
+        <IconVisibility class="h-3.5 w-3.5 fill-current" />
     </IconButton>
     <IconButton
         title="Go to first frame"
