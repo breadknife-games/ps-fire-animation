@@ -33,6 +33,7 @@ export const timelineService = {
     insertEmptyFrameAfter,
     duplicateFrameBefore,
     duplicateFrameAfter,
+    duplicateLayer,
     deleteFrame,
     deleteLayer,
     getLayerThumbnail,
@@ -256,6 +257,16 @@ async function duplicateFrameAfter(layerId: number): Promise<TimelineState> {
     const duplicated = await layer.document.duplicateLayer(layer)
 
     // Trigger preview regeneration - new duplicate frame affects preview
+    await previewService.triggerPreviewRegeneration()
+
+    return getState()
+}
+
+async function duplicateLayer(layerId: number): Promise<TimelineState> {
+    const layer = await resolveLayer(layerId)
+    const duplicated = await layer.document.duplicateLayer(layer)
+
+    // Trigger preview regeneration - new duplicate layer affects preview
     await previewService.triggerPreviewRegeneration()
 
     return getState()

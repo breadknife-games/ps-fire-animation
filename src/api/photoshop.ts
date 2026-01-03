@@ -36,6 +36,8 @@ export const timelineDuplicateFrameBefore = (layerId: number) =>
     timelineService.duplicateFrameBefore(layerId)
 export const timelineDuplicateFrameAfter = (layerId: number) =>
     timelineService.duplicateFrameAfter(layerId)
+export const timelineDuplicateLayer = (layerId: number) =>
+    timelineService.duplicateLayer(layerId)
 export const timelineDeleteFrame = (layerId: number) =>
     timelineService.deleteFrame(layerId)
 export const timelineDeleteLayer = (layerId: number) =>

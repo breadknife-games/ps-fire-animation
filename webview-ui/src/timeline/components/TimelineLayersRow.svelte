@@ -22,7 +22,8 @@
         deleteLayer,
         createLayer,
         createGroup,
-        createVideoGroup
+        createVideoGroup,
+        duplicateLayer
     } from '../../stores/timelineStore.svelte'
 
     const {
@@ -274,6 +275,15 @@
         {
             label: 'New Frame Group',
             action: () => createVideoGroup(row.id, 'below')
+        },
+        {
+            label: '',
+            action: () => {},
+            separator: true
+        },
+        {
+            label: 'Duplicate',
+            action: () => duplicateLayer(row.id)
         },
         {
             label: '',

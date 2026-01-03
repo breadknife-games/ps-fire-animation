@@ -89,6 +89,12 @@ export async function duplicateFrameAfter(layerId: number) {
     timelineState.state = state
 }
 
+export async function duplicateLayer(layerId: number) {
+    const api = getApiClient()
+    const state = await api.timelineDuplicateLayer(layerId)
+    timelineState.state = state
+}
+
 export async function deleteFrame(layerId: number) {
     const api = getApiClient()
     const state = await api.timelineDeleteFrame(layerId)

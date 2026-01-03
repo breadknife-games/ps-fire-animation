@@ -132,6 +132,24 @@ export class FireDocument {
     }
 
     async duplicateLayer(layer: FireLayer): Promise<FireLayer> {
+        // Collect all layer colors and names before duplicating (including children)
+        // Store colors in a tree structure matching the layer hierarchy
+        type ColorTree = {
+            color: string
+            name: string
+            children: ColorTree[]
+        }
+        const collectColorsAndNames = (l: FireLayer): ColorTree => {
+            return {
+                color: l.color.value,
+                name: l.name,
+                children: l.children.map(child =>
+                    collectColorsAndNames(child as FireLayer)
+                )
+            }
+        }
+        const originalColorTree = collectColorsAndNames(layer)
+
         await this.psDocument.suspendHistory(async () => {
             await ps.action.batchPlay(
                 [
@@ -150,7 +168,103 @@ export class FireDocument {
         }, 'Duplicate Layer')
 
         const selections = this.getSelectedLayerIds()
-        return this.getLayerWithoutChildren(selections, selections[0])
+        const duplicated = this.getLayerWithoutChildren(
+            selections,
+            selections[0]
+        )
+
+        // Restore colors for the duplicated layer and all its children
+        // We need to get the full layer tree after duplication to restore all children
+        const allLayersAfter = this.getLayers()
+        const findDuplicatedLayer = (
+            layers: FireLayer[],
+            targetId: number
+        ): FireLayer | null => {
+            for (const l of layers) {
+                if (l.id === targetId) return l
+                if (l.children.length > 0) {
+                    const found = findDuplicatedLayer(
+                        l.children as FireLayer[],
+                        targetId
+                    )
+                    if (found) return found
+                }
+            }
+            return null
+        }
+
+        const duplicatedFull = findDuplicatedLayer(
+            allLayersAfter,
+            duplicated.id
+        )
+        if (duplicatedFull) {
+            // Collect all color and name restoration actions
+            const restoreActions: any[] = []
+            const collectRestoreActions = (
+                l: FireLayer,
+                colorTree: ColorTree,
+                isTopLevel: boolean = false
+            ) => {
+                // Restore color
+                restoreActions.push({
+                    _obj: 'set',
+                    _target: [
+                        {
+                            _ref: 'layer',
+                            _id: l.id
+                        }
+                    ],
+                    to: {
+                        _obj: 'layer',
+                        color: {
+                            _enum: 'color',
+                            _value: colorTree.color
+                        }
+                    }
+                })
+
+                // Restore name - for top level, add "copy" suffix; for children, restore original name
+                const nameToSet = isTopLevel
+                    ? `${colorTree.name} copy`
+                    : colorTree.name
+
+                restoreActions.push({
+                    _obj: 'set',
+                    _target: [
+                        {
+                            _ref: 'layer',
+                            _id: l.id
+                        }
+                    ],
+                    to: {
+                        _obj: 'layer',
+                        name: nameToSet
+                    }
+                })
+
+                const children = l.children as FireLayer[]
+                for (
+                    let i = 0;
+                    i < Math.min(children.length, colorTree.children.length);
+                    i++
+                ) {
+                    collectRestoreActions(
+                        children[i],
+                        colorTree.children[i],
+                        false
+                    )
+                }
+            }
+            collectRestoreActions(duplicatedFull, originalColorTree, true)
+
+            if (restoreActions.length > 0) {
+                await this.psDocument.suspendHistory(async () => {
+                    await ps.action.batchPlay(restoreActions, {})
+                }, 'Restore Layer Colors and Names')
+            }
+        }
+
+        return duplicated
     }
 
     async deleteLayer(layer: FireLayer): Promise<void> {
