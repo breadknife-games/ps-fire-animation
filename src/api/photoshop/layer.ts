@@ -186,28 +186,58 @@ export class FireLayer {
     }
 
     async setColor(colorValue: string) {
+        // Collect children colors before setting to preserve them
+        const childrenColors: Array<{ id: number; color: string }> = []
+        const collectChildrenColors = (layer: FireLayer) => {
+            for (const child of layer.children) {
+                childrenColors.push({ id: child.id, color: child.color.value })
+                collectChildrenColors(child as FireLayer)
+            }
+        }
+        collectChildrenColors(this)
+
         await this.document.suspendHistory(async () => {
-            await ps.action.batchPlay(
-                [
-                    {
-                        _obj: 'set',
-                        _target: [
-                            {
-                                _ref: 'layer',
-                                _id: this.id
-                            }
-                        ],
-                        to: {
-                            _obj: 'layer',
-                            color: {
-                                _enum: 'color',
-                                _value: colorValue
-                            }
+            // Build batch actions: first set the main layer color, then restore all children colors
+            const actions: any[] = [
+                {
+                    _obj: 'set',
+                    _target: [
+                        {
+                            _ref: 'layer',
+                            _id: this.id
+                        }
+                    ],
+                    to: {
+                        _obj: 'layer',
+                        color: {
+                            _enum: 'color',
+                            _value: colorValue
                         }
                     }
-                ],
-                {}
-            )
+                }
+            ]
+
+            // Add actions to restore children colors
+            for (const { id, color } of childrenColors) {
+                actions.push({
+                    _obj: 'set',
+                    _target: [
+                        {
+                            _ref: 'layer',
+                            _id: id
+                        }
+                    ],
+                    to: {
+                        _obj: 'layer',
+                        color: {
+                            _enum: 'color',
+                            _value: color
+                        }
+                    }
+                })
+            }
+
+            await ps.action.batchPlay(actions, {})
         }, 'Set Layer Color')
     }
 
