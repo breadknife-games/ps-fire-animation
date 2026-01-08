@@ -25,7 +25,9 @@
         createLayer,
         createGroup,
         createVideoGroup,
-        duplicateLayer
+        duplicateLayer,
+        moveLayerUp,
+        moveLayerDown
     } from '../../stores/timelineStore.svelte'
 
     const {
@@ -280,6 +282,19 @@
         {
             label: 'Solo',
             action: () => handleSolo()
+        },
+        {
+            label: '',
+            action: () => {},
+            separator: true
+        },
+        {
+            label: 'Move Up',
+            action: () => moveLayerUp(row.id)
+        },
+        {
+            label: 'Move Down',
+            action: () => moveLayerDown(row.id)
         },
         {
             label: '',

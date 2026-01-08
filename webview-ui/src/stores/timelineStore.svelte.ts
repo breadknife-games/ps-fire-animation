@@ -1,6 +1,7 @@
 import type {
     LayerThumbnailPayload,
     TimelineFrameDTO,
+    TimelineRowDTO,
     TimelineState
 } from '../../../src/shared/timeline'
 import { getApiClient } from '../lib/api-client'
@@ -190,6 +191,75 @@ export async function moveLayer(
     const api = getApiClient()
     const state = await api.timelineMoveLayer(layerId, targetLayerId, position)
     timelineState.state = state
+}
+
+export async function moveLayerUp(layerId: number) {
+    if (!timelineState.state) return
+
+    // Find the layer and its siblings in the current state
+    const result = findLayerAndSiblings(timelineState.state.rows, layerId)
+    if (!result) return
+
+    const { siblings, currentIndex } = result
+
+    // Can't move up if already at the top (index 0)
+    if (currentIndex <= 0) return
+
+    // Move above the sibling that's currently above us
+    const targetSibling = siblings[currentIndex - 1]
+    const api = getApiClient()
+    const state = await api.timelineMoveLayer(
+        layerId,
+        targetSibling.id,
+        'above'
+    )
+    timelineState.state = state
+}
+
+export async function moveLayerDown(layerId: number) {
+    if (!timelineState.state) return
+
+    // Find the layer and its siblings in the current state
+    const result = findLayerAndSiblings(timelineState.state.rows, layerId)
+    if (!result) return
+
+    const { siblings, currentIndex } = result
+
+    // Can't move down if already at the bottom
+    if (currentIndex >= siblings.length - 1) return
+
+    // Move below the sibling that's currently below us
+    const targetSibling = siblings[currentIndex + 1]
+    const api = getApiClient()
+    const state = await api.timelineMoveLayer(
+        layerId,
+        targetSibling.id,
+        'below'
+    )
+    timelineState.state = state
+}
+
+// Helper to find a layer's siblings in the timeline state
+function findLayerAndSiblings(
+    rows: TimelineRowDTO[],
+    layerId: number,
+    siblings: TimelineRowDTO[] = rows
+): { siblings: TimelineRowDTO[]; currentIndex: number } | null {
+    for (let i = 0; i < rows.length; i++) {
+        const row = rows[i]
+        if (row.id === layerId) {
+            return { siblings, currentIndex: i }
+        }
+        if (row.children?.length) {
+            const result = findLayerAndSiblings(
+                row.children,
+                layerId,
+                row.children
+            )
+            if (result) return result
+        }
+    }
+    return null
 }
 
 export async function createLayer(
