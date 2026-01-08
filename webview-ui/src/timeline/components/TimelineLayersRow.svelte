@@ -46,7 +46,8 @@
         startDrag,
         updateDropTarget,
         endDrag,
-        executeDrop
+        executeDrop,
+        setExpandedRows
     } = useTimelinePanelContext()
 
     import { layerColors } from '../../../../src/shared/colors'
@@ -285,6 +286,11 @@
             action: () => handleSolo()
         },
         {
+            label: 'Collapse All Children',
+            action: () => collapseAllChildren(),
+            disabled: !isFolder && !isGroup
+        },
+        {
             label: '',
             action: () => {},
             separator: true
@@ -383,6 +389,30 @@
 
     function closeContextMenu() {
         contextMenuVisible = false
+    }
+
+    function collapseAllChildren() {
+        // Recursively collect all descendant IDs
+        const descendantIds: number[] = []
+
+        function collectDescendantIds(row: TimelineRowDTO) {
+            if (row.children?.length) {
+                for (const child of row.children) {
+                    descendantIds.push(child.id)
+                    collectDescendantIds(child)
+                }
+            }
+        }
+
+        collectDescendantIds(row)
+
+        // Create a new expandedRows record with all descendants set to false
+        const newExpandedRows = { ...timelineState.expandedRows }
+        for (const id of descendantIds) {
+            newExpandedRows[id] = false
+        }
+
+        setExpandedRows(newExpandedRows)
     }
 </script>
 
