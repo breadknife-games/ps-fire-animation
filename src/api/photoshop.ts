@@ -81,6 +81,11 @@ export const timelineCreateVideoGroup = (
 export const timelineNormalize = () => timelineService.normalizeTimeline()
 export const timelineCreateVideoTimeline = () =>
     timelineService.createVideoTimeline()
+export const timelineApplyLayerFocus = (
+    selectedLayerIds: number[],
+    opacity: number
+) => timelineService.applyLayerFocus(selectedLayerIds, opacity)
+export const timelineClearLayerFocus = () => timelineService.clearLayerFocus()
 export const previewGetState = () => previewService.getPreviewState()
 export const previewRenderFrame = (frameId: string, resolution?: number) =>
     previewService.renderPreviewFrame(frameId, resolution)

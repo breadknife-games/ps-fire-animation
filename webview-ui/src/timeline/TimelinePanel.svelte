@@ -32,7 +32,14 @@
     } from './timelineContext'
     import { readable, toStore } from 'svelte/store'
     import { untrack } from 'svelte'
-    import { timelineState as timelineStateStore } from '../stores/timelineStore.svelte'
+    import {
+        timelineState as timelineStateStore,
+        applyLayerFocus
+    } from '../stores/timelineStore.svelte'
+    import {
+        layerFocusState,
+        getLayerFocusOpacity
+    } from '../stores/layerFocusStore.svelte'
 
     interface Props {
         timelineState: TimelineState
@@ -181,6 +188,19 @@
             timelinePanelState.headIndex = current.index
             untrack(() => setPlayheadIndex(current.index))
         }
+    })
+
+    // Apply layer focus when selection changes (if enabled)
+    $effect(() => {
+        if (!layerFocusState.enabled) return
+
+        const selectedIds = Array.from(timelinePanelState.selectionSet)
+        if (selectedIds.length === 0) return
+
+        const opacity = getLayerFocusOpacity()
+        untrack(() => {
+            void applyLayerFocus(selectedIds, opacity)
+        })
     })
 
     $effect(() => {

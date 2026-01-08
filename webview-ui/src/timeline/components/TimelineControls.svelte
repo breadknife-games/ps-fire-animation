@@ -6,17 +6,25 @@
     import IconPreset from '../../lib/components/icons/IconPreset.svelte'
     import IconRewind from '../../lib/components/icons/IconRewind.svelte'
     import IconVisibility from '../../lib/components/icons/IconVisibility.svelte'
+    import IconCrosshair from '../../lib/components/icons/IconCrosshair.svelte'
     import IconButton from './IconButton.svelte'
     import {
         makeAllVisible,
         openOnionSkinSettings,
         setPlayheadIndex,
         timelineSelectFrame,
-        toggleOnionSkin
+        toggleOnionSkin,
+        applyLayerFocus,
+        clearLayerFocus
     } from '../../stores/timelineStore.svelte'
     import { findFirstFrame, findSelectedFrame } from '../utils'
     import type { TimelineRowDTO } from '../../../../src/shared/timeline'
     import { useTimelinePanelContext } from '../timelineContext'
+    import {
+        layerFocusState,
+        setLayerFocusEnabled,
+        getLayerFocusOpacity
+    } from '../../stores/layerFocusStore.svelte'
 
     const { disableFrameActions = false } = $props<{
         disableFrameActions?: boolean
@@ -64,6 +72,21 @@
     function handleNextFrame() {
         void stepSelection(1)
     }
+
+    async function handleToggleLayerFocus() {
+        const newEnabled = !layerFocusState.enabled
+        setLayerFocusEnabled(newEnabled)
+
+        if (newEnabled) {
+            // Apply layer focus with current opacity setting
+            const selectedIds = Array.from(timelineState.selectionSet)
+            const opacity = getLayerFocusOpacity()
+            await applyLayerFocus(selectedIds, opacity)
+        } else {
+            // Clear layer focus - restore all to 100%
+            await clearLayerFocus()
+        }
+    }
 </script>
 
 <div
@@ -97,5 +120,16 @@
     </IconButton>
     <IconButton title="Onion skin settings" onClick={openOnionSkinSettings}>
         <IconPageGear class="h-3.5 w-3.5 fill-current" />
+    </IconButton>
+    <IconButton
+        title={layerFocusState.enabled
+            ? 'Disable layer focus'
+            : 'Enable layer focus'}
+        onClick={handleToggleLayerFocus}>
+        {#if layerFocusState.enabled}
+            <IconCrosshair class="h-3.5 w-3.5 fill-current opacity-100" />
+        {:else}
+            <IconCrosshair class="h-3.5 w-3.5 fill-current opacity-50" />
+        {/if}
     </IconButton>
 </div>

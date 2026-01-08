@@ -6,13 +6,17 @@ import {
     regenerateAffectedFrames,
     updatePreviewSelection
 } from './stores/previewStore.svelte'
-import { timelineState } from './stores/timelineStore.svelte'
+import { timelineState, applyLayerFocus } from './stores/timelineStore.svelte'
 import { setTheme as setThemeStore, type ThemeName } from './stores/themeStore'
 import {
     setUIScale as setUIScaleStore,
     type UIScale
 } from './stores/uiScaleStore'
 import { previewPlaybackControl } from './stores/previewControlStore.svelte'
+import {
+    setLayerFocusOpacity as setLayerFocusOpacityStore,
+    getLayerFocusEnabled
+} from './stores/layerFocusStore.svelte'
 
 export const receiveTimelineState = (state: TimelineState) => {
     console.log('receiveTimelineState !!!!!')
@@ -64,4 +68,15 @@ export const previewPlayPause = () => {
 export const previewPlayStop = () => {
     console.log('[webview-api] previewPlayStop called')
     previewPlaybackControl.playStop()
+}
+
+export const setLayerFocusOpacity = async (opacity: number) => {
+    console.log('[webview-api] Setting layer focus opacity to:', opacity)
+    setLayerFocusOpacityStore(opacity)
+
+    // If layer focus is enabled, reapply with new opacity
+    if (getLayerFocusEnabled() && timelineState.state) {
+        const selectedIds = timelineState.state.selectedLayerIds
+        await applyLayerFocus(selectedIds, opacity)
+    }
 }

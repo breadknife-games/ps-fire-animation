@@ -49,7 +49,9 @@ export const timelineService = {
     normalizeTimeline,
     createVideoTimeline,
     goToPreviousFrame,
-    goToNextFrame
+    goToNextFrame,
+    applyLayerFocus,
+    clearLayerFocus
 }
 
 async function getState(): Promise<TimelineState> {
@@ -741,6 +743,119 @@ async function normalizeLayersRecursive(
             )
             // Regular layers always span 5000 frames to cover any animation
             await PSTimeline.setLayerLength(layer.id, 5000)
+        }
+    }
+}
+
+/**
+ * Apply layer focus effect - dim OTHER visible video groups when a frame is selected
+ * @param selectedLayerIds - Array of selected layer IDs
+ * @param opacity - Opacity value (0-100) for non-selected video groups
+ */
+async function applyLayerFocus(
+    selectedLayerIds: number[],
+    opacity: number
+): Promise<void> {
+    console.log('[applyLayerFocus] Applying layer focus', {
+        selectedLayerIds,
+        opacity
+    })
+
+    if (selectedLayerIds.length === 0) return
+
+    const document = FireDocument.current
+    const layers = document.getLayers()
+
+    // Find the selected layer
+    const selectedLayerId = selectedLayerIds[0]
+    const selectedLayerInfo = findLayerWithParent(layers, selectedLayerId)
+
+    if (!selectedLayerInfo) return
+
+    // Only proceed if the selected layer is a frame in a video group
+    if (
+        selectedLayerInfo.parent &&
+        selectedLayerInfo.parent.type === FireLayerType.Video
+    ) {
+        const selectedVideoGroup = selectedLayerInfo.parent
+        console.log(
+            `[applyLayerFocus] Selected frame is in video group "${selectedVideoGroup.name}"`
+        )
+
+        // Get ALL video groups in the entire document
+        const allVideoGroups = findAllVideoGroups(layers)
+
+        // Dim all OTHER visible video groups
+        for (const videoGroup of allVideoGroups) {
+            if (videoGroup.id !== selectedVideoGroup.id && videoGroup.visible) {
+                console.log(
+                    `[applyLayerFocus] Dimming video group "${videoGroup.name}" to ${opacity}%`
+                )
+                await videoGroup.setOpacity(opacity)
+            } else if (videoGroup.id === selectedVideoGroup.id) {
+                console.log(
+                    `[applyLayerFocus] Keeping selected video group "${videoGroup.name}" at 100%`
+                )
+                await videoGroup.setOpacity(100)
+            }
+        }
+    }
+}
+
+/**
+ * Recursively find all video groups in the layer tree
+ */
+function findAllVideoGroups(layers: ReadonlyArray<FireLayer>): FireLayer[] {
+    const videoGroups: FireLayer[] = []
+
+    for (const layer of layers) {
+        if (layer.type === FireLayerType.Video) {
+            videoGroups.push(layer)
+        } else if (
+            layer.type === FireLayerType.Group &&
+            layer.children?.length
+        ) {
+            // Recursively search in groups
+            videoGroups.push(
+                ...findAllVideoGroups(layer.children as FireLayer[])
+            )
+        }
+    }
+
+    return videoGroups
+}
+
+/**
+ * Clear layer focus effect - restore all video groups to 100% opacity
+ */
+async function clearLayerFocus(): Promise<void> {
+    console.log('[clearLayerFocus] Clearing layer focus')
+    const document = FireDocument.current
+    const layers = document.getLayers()
+
+    // Recursively restore all video groups to 100% opacity
+    await restoreVideoGroupOpacityRecursive(layers)
+}
+
+/**
+ * Recursively restore opacity for video groups only
+ * @param layers - Layers to process
+ */
+async function restoreVideoGroupOpacityRecursive(
+    layers: ReadonlyArray<FireLayer>
+): Promise<void> {
+    for (const layer of layers) {
+        if (layer.type === FireLayerType.Video) {
+            // Restore video group opacity
+            console.log(
+                `[clearLayerFocus] Restoring video group "${layer.name}" to 100%`
+            )
+            await layer.setOpacity(100)
+        } else if (layer.type === FireLayerType.Group) {
+            // Process children in regular groups
+            await restoreVideoGroupOpacityRecursive(
+                layer.children as FireLayer[]
+            )
         }
     }
 }

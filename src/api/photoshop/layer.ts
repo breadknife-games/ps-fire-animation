@@ -257,6 +257,29 @@ export class FireLayer {
         }, 'Rename Layer')
     }
 
+    async setOpacity(opacity: number) {
+        await this.document.suspendHistory(async () => {
+            await ps.action.batchPlay(
+                [
+                    {
+                        _obj: 'set',
+                        _target: [
+                            {
+                                _ref: 'layer',
+                                _id: this.id
+                            }
+                        ],
+                        to: {
+                            _obj: 'layer',
+                            opacity
+                        }
+                    }
+                ],
+                {}
+            )
+        }, 'Set Layer Opacity')
+    }
+
     async getBase64ImageData(
         width: number,
         height: number

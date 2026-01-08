@@ -68,7 +68,28 @@ const menuActions: Record<string, () => void> = {
     scale85: () => setUIScale(85),
     scale90: () => setUIScale(90),
     scale95: () => setUIScale(95),
-    scale100: () => setUIScale(100)
+    scale100: () => setUIScale(100),
+    focusOpacity10: () => setLayerFocusOpacity(10),
+    focusOpacity20: () => setLayerFocusOpacity(20),
+    focusOpacity30: () => setLayerFocusOpacity(30),
+    focusOpacity40: () => setLayerFocusOpacity(40),
+    focusOpacity50: () => setLayerFocusOpacity(50),
+    focusOpacity60: () => setLayerFocusOpacity(60),
+    focusOpacity70: () => setLayerFocusOpacity(70),
+    focusOpacity80: () => setLayerFocusOpacity(80),
+    focusOpacity90: () => setLayerFocusOpacity(90)
+}
+
+async function setLayerFocusOpacity(opacity: number) {
+    console.log('[Menu] Setting layer focus opacity to:', opacity)
+    const webviewAPI = getTimelineWebviewAPI()
+    if (webviewAPI) {
+        await webviewAPI.setLayerFocusOpacity(opacity)
+    } else {
+        console.warn(
+            '[Menu] Webview API not ready for layer focus opacity change'
+        )
+    }
 }
 
 // Menu items with submenu support
@@ -104,6 +125,21 @@ const timelineMenuItems = [
             { id: 'scale90', label: '90%' },
             { id: 'scale95', label: '95%' },
             { id: 'scale100', label: '100%' }
+        ]
+    },
+    {
+        id: 'layerFocusSubmenu',
+        label: 'Layer Focus Opacity',
+        submenu: [
+            { id: 'focusOpacity10', label: '10%' },
+            { id: 'focusOpacity20', label: '20%' },
+            { id: 'focusOpacity30', label: '30%' },
+            { id: 'focusOpacity40', label: '40%' },
+            { id: 'focusOpacity50', label: '50%' },
+            { id: 'focusOpacity60', label: '60%' },
+            { id: 'focusOpacity70', label: '70%' },
+            { id: 'focusOpacity80', label: '80%' },
+            { id: 'focusOpacity90', label: '90%' }
         ]
     }
 ]

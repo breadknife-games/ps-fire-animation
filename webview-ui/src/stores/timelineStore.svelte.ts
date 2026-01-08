@@ -321,3 +321,16 @@ export async function createVideoTimeline() {
     const state = await api.timelineCreateVideoTimeline()
     timelineState.state = state
 }
+
+export async function applyLayerFocus(
+    selectedLayerIds: number[],
+    opacity: number
+) {
+    const api = getApiClient()
+    await api.timelineApplyLayerFocus(selectedLayerIds, opacity)
+}
+
+export async function clearLayerFocus() {
+    const api = getApiClient()
+    await api.timelineClearLayerFocus()
+}

@@ -3,10 +3,12 @@ import './app.css'
 import App from './main-webview.svelte'
 import { initTheme } from './stores/themeStore'
 import { initUIScale } from './stores/uiScaleStore'
+import { initLayerFocus } from './stores/layerFocusStore.svelte'
 
-// Initialize theme and UI scale from localStorage or defaults
+// Initialize theme, UI scale, and layer focus from localStorage or defaults
 initTheme()
 initUIScale()
+initLayerFocus()
 
 mount(App, {
     target: document.getElementById('app')!
