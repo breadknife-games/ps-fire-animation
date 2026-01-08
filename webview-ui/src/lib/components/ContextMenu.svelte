@@ -83,8 +83,8 @@
 {#if visible}
     <div
         bind:this={menuEl}
-        class="context-menu fixed z-9999"
-        style="left: {adjustedX}px; top: {adjustedY}px;">
+        class="context-menu fixed"
+        style="left: {adjustedX}px; top: {adjustedY}px; z-index: 10000;">
         <MenuList {items} onItemClick={onClose} />
     </div>
 {/if}
