@@ -335,11 +335,15 @@ export class FireDocument {
     }
 
     /**
-     * Create a new video group with a default empty frame inside
+     * Create a new video group with empty frames inside
      * @param name - Optional name for the video group
+     * @param frameCount - Number of frames to create (default 1)
      * @returns The newly created video group layer
      */
-    async createVideoGroup(name?: string): Promise<FireLayer> {
+    async createVideoGroup(
+        name?: string,
+        frameCount: number = 1
+    ): Promise<FireLayer> {
         let videoGroupId: number | null = null
 
         await this.psDocument.suspendHistory(async () => {
@@ -373,9 +377,10 @@ export class FireDocument {
 
             videoGroupId = result[0]?.layerID ?? this.getSelectedLayerIds()[0]
 
-            // Create an empty frame layer inside and normalize it
-            await ps.action.batchPlay(
-                [
+            // Create all frames in a single batch operation
+            const frameActions: any[] = []
+            for (let i = 0; i < frameCount; i++) {
+                frameActions.push(
                     {
                         _obj: 'make',
                         _target: [{ _ref: 'layer' }]
@@ -398,9 +403,10 @@ export class FireDocument {
                             seconds: 0
                         }
                     }
-                ],
-                {}
-            )
+                )
+            }
+
+            await ps.action.batchPlay(frameActions, {})
         }, 'Create Video Group')
 
         const selections = this.getSelectedLayerIds()

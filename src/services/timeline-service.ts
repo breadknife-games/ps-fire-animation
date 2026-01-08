@@ -613,7 +613,14 @@ async function createVideoGroup(
     colorValue?: string
 ): Promise<TimelineState> {
     const document = FireDocument.current
-    const newGroup = await document.createVideoGroup(name)
+
+    // Find the first parent regular group to determine how many frames to create
+    const anchorLayer = await resolveLayer(anchorLayerId)
+    const frameCount = findParentGroupFrameCount(anchorLayer)
+    console.log('frameCount', frameCount)
+
+    // Create video group with all frames in one batch operation
+    const newGroup = await document.createVideoGroup(name, frameCount)
     // Move the new group relative to the anchor layer
     await document.moveLayer(newGroup.id, anchorLayerId, position)
     // Set the color if provided
@@ -625,6 +632,22 @@ async function createVideoGroup(
     await previewService.triggerPreviewRegeneration()
 
     return getState()
+}
+
+/**
+ * Find the first parent regular group and return its frame count
+ */
+function findParentGroupFrameCount(layer: FireLayer): number {
+    let current: FireLayer | null = layer
+
+    while (current) {
+        if (current.type === FireLayerType.Group) {
+            return findMaxFrameCount(current.children as FireLayer[])
+        }
+        current = current.parent
+    }
+
+    return 1
 }
 
 /**
@@ -679,9 +702,6 @@ function findMaxFrameCount(layers: ReadonlyArray<FireLayer>): number {
     let max = 0
     for (const layer of layers) {
         if (layer.type === FireLayerType.Video) {
-            console.log(
-                `[findMaxFrameCount] Video group "${layer.name}" has ${layer.children.length} frames`
-            )
             max = Math.max(max, layer.children.length)
         } else if (layer.type === FireLayerType.Group) {
             max = Math.max(
