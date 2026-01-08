@@ -332,18 +332,12 @@
         {
             label: 'New Frame Group',
             action: () =>
-                createVideoGroup(
-                    row.id,
-                    isGroup || isVideo ? 'inside' : 'below'
-                ),
+                createVideoGroup(row.id, isGroup ? 'inside' : 'below'),
             submenu: [
                 {
                     label: 'Default',
                     action: () =>
-                        createVideoGroup(
-                            row.id,
-                            isGroup || isVideo ? 'inside' : 'below'
-                        )
+                        createVideoGroup(row.id, isGroup ? 'inside' : 'below')
                 },
                 { label: '', action: () => {}, separator: true },
                 ...semanticColors.map(color => ({
@@ -352,7 +346,7 @@
                     action: () =>
                         createVideoGroup(
                             row.id,
-                            isGroup || isVideo ? 'inside' : 'below',
+                            isGroup ? 'inside' : 'below',
                             color.name,
                             color.value
                         )
