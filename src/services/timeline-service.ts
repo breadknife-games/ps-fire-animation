@@ -566,12 +566,18 @@ async function moveFrameRight(layerId: number): Promise<TimelineState> {
 
 async function createLayer(
     anchorLayerId: number,
-    position: 'above' | 'below'
+    position: 'above' | 'below',
+    name?: string,
+    colorValue?: string
 ): Promise<TimelineState> {
     const document = FireDocument.current
-    const newLayer = await document.createLayer()
+    const newLayer = await document.createLayer(name)
     // Move the new layer relative to the anchor layer
     await document.moveLayer(newLayer.id, anchorLayerId, position)
+    // Set the color if provided
+    if (colorValue) {
+        await newLayer.setColor(colorValue)
+    }
     // Normalize the layer to span the full timeline (5000 frames)
     await PSTimeline.setLayerLength(newLayer.id, 5000)
 
@@ -583,23 +589,35 @@ async function createLayer(
 
 async function createGroup(
     anchorLayerId: number,
-    position: 'above' | 'below'
+    position: 'above' | 'below',
+    name?: string,
+    colorValue?: string
 ): Promise<TimelineState> {
     const document = FireDocument.current
-    const newGroup = await document.createGroup()
+    const newGroup = await document.createGroup(name)
     // Move the new group relative to the anchor layer
     await document.moveLayer(newGroup.id, anchorLayerId, position)
+    // Set the color if provided
+    if (colorValue) {
+        await newGroup.setColor(colorValue)
+    }
     return getState()
 }
 
 async function createVideoGroup(
     anchorLayerId: number,
-    position: 'above' | 'below'
+    position: 'above' | 'below',
+    name?: string,
+    colorValue?: string
 ): Promise<TimelineState> {
     const document = FireDocument.current
-    const newGroup = await document.createVideoGroup()
+    const newGroup = await document.createVideoGroup(name)
     // Move the new group relative to the anchor layer
     await document.moveLayer(newGroup.id, anchorLayerId, position)
+    // Set the color if provided
+    if (colorValue) {
+        await newGroup.setColor(colorValue)
+    }
 
     // Trigger full preview regeneration - new video group affects preview structure
     await previewService.triggerPreviewRegeneration()

@@ -321,7 +321,9 @@ export class FireDocument {
                     {
                         _obj: 'make',
                         _target: [{ _ref: 'layerSection' }],
-                        ...(name ? { name } : {})
+                        ...(name
+                            ? { using: { _obj: 'layerSection', name } }
+                            : {})
                     }
                 ],
                 {}
@@ -361,7 +363,9 @@ export class FireDocument {
                     {
                         _obj: 'make',
                         _target: [{ _ref: 'sceneSection' }],
-                        ...(name ? { name } : {})
+                        ...(name
+                            ? { using: { _obj: 'sceneSection', name } }
+                            : {})
                     }
                 ],
                 {}

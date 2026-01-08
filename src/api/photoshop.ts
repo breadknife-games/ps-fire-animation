@@ -62,16 +62,22 @@ export const timelineMoveFrameRight = (layerId: number) =>
     timelineService.moveFrameRight(layerId)
 export const timelineCreateLayer = (
     anchorLayerId: number,
-    position: 'above' | 'below'
-) => timelineService.createLayer(anchorLayerId, position)
+    position: 'above' | 'below',
+    name?: string,
+    colorValue?: string
+) => timelineService.createLayer(anchorLayerId, position, name, colorValue)
 export const timelineCreateGroup = (
     anchorLayerId: number,
-    position: 'above' | 'below'
-) => timelineService.createGroup(anchorLayerId, position)
+    position: 'above' | 'below',
+    name?: string,
+    colorValue?: string
+) => timelineService.createGroup(anchorLayerId, position, name, colorValue)
 export const timelineCreateVideoGroup = (
     anchorLayerId: number,
-    position: 'above' | 'below'
-) => timelineService.createVideoGroup(anchorLayerId, position)
+    position: 'above' | 'below',
+    name?: string,
+    colorValue?: string
+) => timelineService.createVideoGroup(anchorLayerId, position, name, colorValue)
 export const timelineNormalize = () => timelineService.normalizeTimeline()
 export const timelineCreateVideoTimeline = () =>
     timelineService.createVideoTimeline()

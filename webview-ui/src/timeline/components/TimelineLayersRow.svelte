@@ -9,7 +9,9 @@
     import IconFolder from '../../lib/components/icons/IconFolder.svelte'
     import IconFolderOpen from '../../lib/components/icons/IconFolderOpen.svelte'
     import ContextMenu from '../../lib/components/ContextMenu.svelte'
+    import type { MenuItem } from '../../lib/components/ContextMenu.svelte'
     import { getRowHeight } from '../utils'
+    import { semanticColors } from '../../lib/semantic-colors'
     import {
         useTimelinePanelContext,
         type DropPosition
@@ -45,22 +47,14 @@
         executeDrop
     } = useTimelinePanelContext()
 
-    const layerColors = [
-        { value: 'none', name: 'None', hex: '#3a3a3a' },
-        { value: 'red', name: 'Red', hex: '#8d2d2c' },
-        { value: 'orange', name: 'Orange', hex: '#935201' },
-        { value: 'yellowColor', name: 'Yellow', hex: '#957c00' },
-        { value: 'grain', name: 'Green', hex: '#3f6334' },
-        { value: 'seafoam', name: 'Seafoam', hex: '#006662' },
-        { value: 'blue', name: 'Blue', hex: '#3e4f85' },
-        { value: 'indigo', name: 'Indigo', hex: '#3236a7' },
-        { value: 'magenta', name: 'Magenta', hex: '#a92f64' },
-        { value: 'fuchsia', name: 'Fuchsia', hex: '#852487' },
-        { value: 'violet', name: 'Violet', hex: '#5d4681' },
-        { value: 'gray', name: 'Gray', hex: '#535353' }
-    ]
+    import { layerColors } from '../../../../src/shared/colors'
+
+    const layerColorsArray = Object.values(layerColors)
 
     let colorPickerOpen = $state(false)
+    let semanticColorMenuVisible = $state(false)
+    let semanticColorMenuX = $state(0)
+    let semanticColorMenuY = $state(0)
     let colorButtonEl: HTMLButtonElement | null = $state(null)
     let dropdownPos = $state({ top: 0, left: 0 })
     let isRenaming = $state(false)
@@ -117,11 +111,22 @@
 
     function handleColorClick(event: MouseEvent) {
         event.stopPropagation()
+        // Left click - show grid picker
         if (!colorPickerOpen && colorButtonEl) {
             const rect = colorButtonEl.getBoundingClientRect()
             dropdownPos = { top: rect.bottom + 4, left: rect.left }
         }
         colorPickerOpen = !colorPickerOpen
+    }
+
+    function handleColorRightClick(event: MouseEvent) {
+        event.preventDefault()
+        event.stopPropagation()
+        // Right click - show semantic color menu
+        semanticColorMenuX = event.clientX
+        semanticColorMenuY = event.clientY
+        semanticColorMenuVisible = true
+        colorPickerOpen = false
     }
 
     async function handleColorSelect(colorValue: string) {
@@ -135,6 +140,23 @@
             colorPickerOpen = false
         }
     }
+
+    function closeSemanticColorMenu() {
+        semanticColorMenuVisible = false
+    }
+
+    async function handleSemanticColorSelect(colorValue: string) {
+        semanticColorMenuVisible = false
+        await setLayerColor(row.id, colorValue)
+    }
+
+    const semanticColorMenuItems = $derived<MenuItem[]>(
+        semanticColors.map(color => ({
+            label: color.name,
+            color: layerColors[color.value].hex,
+            action: () => handleSemanticColorSelect(color.value)
+        }))
+    )
 
     function handleNameDoubleClick(event: MouseEvent) {
         event.stopPropagation()
@@ -254,7 +276,7 @@
     let contextMenuX = $state(0)
     let contextMenuY = $state(0)
 
-    const contextMenuItems = $derived([
+    const contextMenuItems = $derived<MenuItem[]>([
         {
             label: 'Solo',
             action: () => handleSolo()
@@ -270,11 +292,42 @@
         },
         {
             label: 'New Group',
-            action: () => createGroup(row.id, 'below')
+            action: () => createGroup(row.id, 'below'),
+            submenu: [
+                {
+                    label: 'Default',
+                    action: () => createGroup(row.id, 'below')
+                },
+                { label: '', action: () => {}, separator: true },
+                ...semanticColors.map(color => ({
+                    label: color.name,
+                    color: layerColors[color.value].hex,
+                    action: () =>
+                        createGroup(row.id, 'below', color.name, color.value)
+                }))
+            ]
         },
         {
             label: 'New Frame Group',
-            action: () => createVideoGroup(row.id, 'below')
+            action: () => createVideoGroup(row.id, 'below'),
+            submenu: [
+                {
+                    label: 'Default',
+                    action: () => createVideoGroup(row.id, 'below')
+                },
+                { label: '', action: () => {}, separator: true },
+                ...semanticColors.map(color => ({
+                    label: color.name,
+                    color: layerColors[color.value].hex,
+                    action: () =>
+                        createVideoGroup(
+                            row.id,
+                            'below',
+                            color.name,
+                            color.value
+                        )
+                }))
+            ]
         },
         {
             label: '',
@@ -377,8 +430,9 @@
                     class="h-3 w-3 rounded-sm hover:ring-1 hover:ring-white/30"
                     class:opacity-50={shouldGrayOut}
                     style={`background-color: ${row.colorHex || '#3a3a3a'};`}
-                    title="Change layer color"
-                    onclick={handleColorClick}></button>
+                    title="Left click: color picker | Right click: semantic colors"
+                    onclick={handleColorClick}
+                    oncontextmenu={handleColorRightClick}></button>
             </div>
             {#if isRenaming}
                 <input
@@ -443,7 +497,7 @@
     <div
         class="color-picker-container fixed z-9999 grid grid-cols-4 gap-1 rounded bg-timeline-surface-2 p-1.5 shadow-lg ring-1 ring-white/10"
         style={`top: ${dropdownPos.top}px; left: ${dropdownPos.left}px;`}>
-        {#each layerColors as color}
+        {#each layerColorsArray as color}
             <button
                 type="button"
                 class="h-4 w-4 rounded-sm transition hover:scale-110 hover:ring-1 hover:ring-white/40"
@@ -460,3 +514,10 @@
     x={contextMenuX}
     y={contextMenuY}
     onClose={closeContextMenu} />
+
+<ContextMenu
+    items={semanticColorMenuItems}
+    visible={semanticColorMenuVisible}
+    x={semanticColorMenuX}
+    y={semanticColorMenuY}
+    onClose={closeSemanticColorMenu} />

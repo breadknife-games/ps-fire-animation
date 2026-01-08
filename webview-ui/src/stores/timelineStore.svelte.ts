@@ -194,28 +194,49 @@ export async function moveLayer(
 
 export async function createLayer(
     anchorLayerId: number,
-    position: 'above' | 'below'
+    position: 'above' | 'below',
+    name?: string,
+    colorValue?: string
 ) {
     const api = getApiClient()
-    const state = await api.timelineCreateLayer(anchorLayerId, position)
+    const state = await api.timelineCreateLayer(
+        anchorLayerId,
+        position,
+        name,
+        colorValue
+    )
     timelineState.state = state
 }
 
 export async function createGroup(
     anchorLayerId: number,
-    position: 'above' | 'below'
+    position: 'above' | 'below',
+    name?: string,
+    colorValue?: string
 ) {
     const api = getApiClient()
-    const state = await api.timelineCreateGroup(anchorLayerId, position)
+    const state = await api.timelineCreateGroup(
+        anchorLayerId,
+        position,
+        name,
+        colorValue
+    )
     timelineState.state = state
 }
 
 export async function createVideoGroup(
     anchorLayerId: number,
-    position: 'above' | 'below'
+    position: 'above' | 'below',
+    name?: string,
+    colorValue?: string
 ) {
     const api = getApiClient()
-    const state = await api.timelineCreateVideoGroup(anchorLayerId, position)
+    const state = await api.timelineCreateVideoGroup(
+        anchorLayerId,
+        position,
+        name,
+        colorValue
+    )
     timelineState.state = state
 }
 
