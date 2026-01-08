@@ -12,6 +12,7 @@
         findSelectedFrame,
         flattenVisibleRows,
         getMaxFrameCount,
+        getRowHeight,
         type ThumbnailState
     } from './utils'
     import TimelineControls from './components/TimelineControls.svelte'
@@ -156,6 +157,7 @@
             timelinePanelState.frameWidth = frameWidthMin
     })
 
+    // Scroll horizontally to selected frame
     $effect(() => {
         const current = findSelectedFrame(
             timelinePanelState.rows,
@@ -180,6 +182,138 @@
             })
             scrollX = targetScroll
         }
+    })
+
+    // Scroll vertically to selected layer
+    $effect(() => {
+        const selectedIds = timelinePanelState.selectionSet
+        if (selectedIds.size === 0) return
+
+        const scrollEl = bodyScrollEl
+        if (!scrollEl) return
+
+        // Find the selected frame (selection contains frame IDs, not row IDs)
+        const selectedFrame = findSelectedFrame(
+            timelinePanelState.rows,
+            selectedIds
+        )
+        if (!selectedFrame) return
+
+        const selectedRow = selectedFrame.row
+
+        // Find the row and its parent chain in ALL rows (not just visible)
+        function findRowWithParents(
+            rows: TimelineRowDTO[],
+            targetId: number,
+            parents: number[] = []
+        ): { row: TimelineRowDTO; parents: number[] } | null {
+            for (const row of rows) {
+                if (row.id === targetId) {
+                    return { row, parents }
+                }
+                if (row.children?.length) {
+                    const found = findRowWithParents(row.children, targetId, [
+                        ...parents,
+                        row.id
+                    ])
+                    if (found) return found
+                }
+            }
+            return null
+        }
+
+        const selectedRowInfo = findRowWithParents(
+            timelinePanelState.rows,
+            selectedRow.id
+        )
+        if (!selectedRowInfo) return
+
+        // Expand all parent folders if needed
+        if (selectedRowInfo.parents.length > 0) {
+            const needsExpansion = selectedRowInfo.parents.some(
+                parentId =>
+                    !(timelinePanelState.expandedRows[parentId] ?? false)
+            )
+
+            if (needsExpansion) {
+                const newExpandedRows = { ...timelinePanelState.expandedRows }
+                for (const parentId of selectedRowInfo.parents) {
+                    newExpandedRows[parentId] = true
+                }
+                untrack(() => setExpandedRows(newExpandedRows))
+                // After expanding, the effect will re-run automatically
+                return
+            }
+        }
+
+        // Now find the row in visible rows
+        const selectedRowIndex = visibleRows.findIndex(
+            item => item.row.id === selectedRow.id
+        )
+        if (selectedRowIndex === -1) return
+
+        const rafId1 = requestAnimationFrame(() => {
+            // Calculate the vertical position of the selected row
+            let rowTop = 0
+            for (let i = 0; i < selectedRowIndex; i++) {
+                const item = visibleRows[i]
+                const isExpanded =
+                    timelinePanelState.expandedRows[item.row.id] ??
+                    item.row.expanded ??
+                    false
+                const height = getRowHeight(
+                    item.row,
+                    isExpanded,
+                    timelinePanelState.collapsedRowHeight,
+                    timelinePanelState.expandedRowHeight
+                )
+                rowTop += height
+            }
+
+            const selectedRow = visibleRows[selectedRowIndex]
+            const isExpanded =
+                timelinePanelState.expandedRows[selectedRow.row.id] ??
+                selectedRow.row.expanded ??
+                false
+            const rowHeight = getRowHeight(
+                selectedRow.row,
+                isExpanded,
+                timelinePanelState.collapsedRowHeight,
+                timelinePanelState.expandedRowHeight
+            )
+            const rowBottom = rowTop + rowHeight
+
+            // Get current scroll position
+            const currentScrollTop = scrollEl.scrollTop
+            const viewportHeight = scrollEl.clientHeight
+            const viewportTop = currentScrollTop
+            const viewportBottom = currentScrollTop + viewportHeight
+
+            // Check if row is outside viewport and scroll if needed
+            const padding = rowHeight * 0.5
+            let targetScrollTop: number | null = null
+
+            if (rowTop < viewportTop + padding) {
+                // Row is above viewport, scroll up
+                targetScrollTop = Math.max(0, rowTop - padding)
+            } else if (rowBottom > viewportBottom - padding) {
+                // Row is below viewport, scroll down
+                targetScrollTop = Math.max(
+                    0,
+                    rowBottom - viewportHeight + padding
+                )
+            }
+
+            if (targetScrollTop !== null) {
+                scrollEl.scroll({
+                    top: targetScrollTop,
+                    behavior: 'smooth'
+                })
+            }
+        })
+
+        // Cleanup function (note: we can only cancel the first RAF)
+        return () => cancelAnimationFrame(rafId1)
     })
 
     // Update headIndex when a frame is selected
