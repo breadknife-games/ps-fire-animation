@@ -5,7 +5,7 @@ import type { ThumbnailState } from './utils'
 
 const TIMELINE_PANEL_CONTEXT_KEY = Symbol('TimelinePanelContext')
 
-export type DropPosition = 'above' | 'below' | 'inside'
+export type DropPosition = 'above' | 'below' | 'inside' | 'inside-end'
 
 export type DragState = {
     draggingRowId: number | null
@@ -31,7 +31,10 @@ export type TimelinePanelContext = {
     setExpandedRows: (value: Record<number, boolean>) => void
     loadThumbnailsForRow: (row: TimelineRowDTO) => void
     startDrag: (rowId: number) => void
-    updateDropTarget: (rowId: number | null, position: DropPosition | null) => void
+    updateDropTarget: (
+        rowId: number | null,
+        position: DropPosition | null
+    ) => void
     endDrag: () => void
     executeDrop: () => Promise<void>
 }

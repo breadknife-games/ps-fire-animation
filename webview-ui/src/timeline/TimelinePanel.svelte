@@ -325,11 +325,46 @@
             return
         }
         try {
-            await moveLayer(draggingRowId, dropTargetRowId, dropPosition)
+            if (dropPosition === 'inside-end') {
+                // Find the last child of the target folder
+                const targetRow = findRowById(
+                    timelinePanelState.rows,
+                    dropTargetRowId
+                )
+                if (
+                    targetRow &&
+                    targetRow.children &&
+                    targetRow.children.length > 0
+                ) {
+                    // Move below the last child
+                    const lastChild =
+                        targetRow.children[targetRow.children.length - 1]
+                    await moveLayer(draggingRowId, lastChild.id, 'below')
+                } else {
+                    // If no children, just place inside
+                    await moveLayer(draggingRowId, dropTargetRowId, 'inside')
+                }
+            } else {
+                await moveLayer(draggingRowId, dropTargetRowId, dropPosition)
+            }
         } catch (e) {
             console.error('Failed to move layer:', e)
         }
         endDrag()
+    }
+
+    function findRowById(
+        rows: TimelineRowDTO[],
+        id: number
+    ): TimelineRowDTO | null {
+        for (const row of rows) {
+            if (row.id === id) return row
+            if (row.children?.length) {
+                const found = findRowById(row.children, id)
+                if (found) return found
+            }
+        }
+        return null
     }
 
     setTimelinePanelContext({

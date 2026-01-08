@@ -234,10 +234,11 @@
         let position: DropPosition
 
         if (isExpandedFolder) {
-            // Expanded folder: top = above (outside), rest = inside
-            // "Below" an expanded folder visually means inside it
+            // Expanded folder: top = above (outside), middle = inside at start, bottom = inside at end
             if (y < height * 0.25) {
                 position = 'above'
+            } else if (y > height * 0.75) {
+                position = 'inside-end'
             } else {
                 position = 'inside'
             }
@@ -405,6 +406,16 @@
     {#if dropPosition === 'inside'}
         <div
             class="absolute inset-0 border-2 border-blue-500 rounded z-10 pointer-events-none bg-blue-500/10">
+        </div>
+    {/if}
+
+    <!-- Drop indicator: inside-end (group highlight with emphasis at bottom) -->
+    {#if dropPosition === 'inside-end'}
+        <div
+            class="absolute inset-0 border-2 border-blue-500 rounded z-10 pointer-events-none bg-blue-500/10">
+        </div>
+        <div
+            class="absolute left-0 right-0 bottom-0 h-1 bg-blue-500 z-10 pointer-events-none">
         </div>
     {/if}
 
