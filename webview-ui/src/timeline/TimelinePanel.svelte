@@ -62,13 +62,18 @@
         }
     })
 
-    const layerColWidth = 320
+    let layerColWidth = $state(320)
+    const layerColWidthMin = 150
+    const layerColWidthMax = 600
     const addFrameColWidth = 62
     const padFrameCount = 3
 
     let draggingHeadIndex = $state<number | null>(null)
     let bodyViewportWidth = $state(0)
     let scrollX = $state(0)
+    let isDraggingResize = $state(false)
+    let resizeStartX = $state(0)
+    let resizeStartWidth = $state(0)
 
     $effect(() => {
         console.log('TIMELINE STATE UPDATED', timelineState)
@@ -387,6 +392,35 @@
         return null
     }
 
+    function handleResizeMouseDown(event: MouseEvent) {
+        event.preventDefault()
+        isDraggingResize = true
+        resizeStartX = event.clientX
+        resizeStartWidth = layerColWidth
+        document.body.classList.add('resizing')
+
+        const handleMouseMove = (e: MouseEvent) => {
+            if (!isDraggingResize) return
+            e.preventDefault()
+            const delta = e.clientX - resizeStartX
+            const newWidth = Math.max(
+                layerColWidthMin,
+                Math.min(layerColWidthMax, resizeStartWidth + delta)
+            )
+            layerColWidth = newWidth
+        }
+
+        const handleMouseUp = () => {
+            isDraggingResize = false
+            document.body.classList.remove('resizing')
+            document.removeEventListener('mousemove', handleMouseMove)
+            document.removeEventListener('mouseup', handleMouseUp)
+        }
+
+        document.addEventListener('mousemove', handleMouseMove)
+        document.addEventListener('mouseup', handleMouseUp)
+    }
+
     setTimelinePanelContext({
         timelineState: timelinePanelState,
         toggleRow,
@@ -400,7 +434,16 @@
     })
 </script>
 
-<div class="flex flex-1 min-h-0 flex-col">
+<div class="flex flex-1 min-h-0 flex-col relative">
+    <!-- Resize Handle -->
+    <button
+        class="resize-handle absolute top-0 bottom-0 z-30 cursor-col-resize hover:bg-timeline-accent/20 active:bg-timeline-accent/30 transition-colors border-0 bg-transparent p-0"
+        style={`left: ${layerColWidth - 2}px; width: 4px;`}
+        onmousedown={handleResizeMouseDown}
+        type="button"
+        aria-label="Resize layer column">
+    </button>
+
     <div
         class="relative flex shrink-0 border-b border-timeline-border bg-timeline-surface-1">
         <div
@@ -502,5 +545,20 @@
     }
     .timeline-body::-webkit-scrollbar-thumb:hover {
         background: var(--color-timeline-border);
+    }
+
+    .resize-handle {
+        user-select: none;
+        -webkit-user-select: none;
+    }
+
+    :global(body.resizing) {
+        cursor: col-resize !important;
+        user-select: none !important;
+        -webkit-user-select: none !important;
+    }
+
+    :global(body.resizing *) {
+        cursor: col-resize !important;
     }
 </style>
