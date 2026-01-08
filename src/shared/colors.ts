@@ -14,11 +14,11 @@ export const layerColors = {
     yellowColor: { value: 'yellowColor', name: 'Yellow', hex: '#957c00' },
     grain: { value: 'grain', name: 'Green', hex: '#3f6334' },
     seafoam: { value: 'seafoam', name: 'Seafoam', hex: '#006662' },
-    blue: { value: 'blue', name: 'Blue', hex: '#3e4f85' },
+    blue: { value: 'blue', name: 'Blue', hex: '#0345fc' },
     indigo: { value: 'indigo', name: 'Indigo', hex: '#3236a7' },
     magenta: { value: 'magenta', name: 'Magenta', hex: '#a92f64' },
     fuchsia: { value: 'fuchsia', name: 'Fuchsia', hex: '#852487' },
-    violet: { value: 'violet', name: 'Violet', hex: '#5d4681' },
+    violet: { value: 'violet', name: 'Violet', hex: '#551d8a' },
     gray: { value: 'gray', name: 'Gray', hex: '#535353' }
 } as const
 
