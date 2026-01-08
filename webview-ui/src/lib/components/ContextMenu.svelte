@@ -39,18 +39,38 @@
             const viewportWidth = window.innerWidth
             const viewportHeight = window.innerHeight
 
-            adjustedX = x
-            adjustedY = y
+            // Padding from edges to avoid header/footer overlap
+            const edgePadding = 30
 
-            // Adjust horizontal position
-            if (x + rect.width > viewportWidth) {
-                adjustedX = Math.max(0, viewportWidth - rect.width - 8)
+            let newX = x
+            let newY = y
+
+            // Adjust horizontal position with padding from edges
+            if (x + rect.width > viewportWidth - edgePadding) {
+                newX = Math.max(
+                    edgePadding,
+                    viewportWidth - rect.width - edgePadding
+                )
+            }
+            // Keep away from left edge too
+            if (newX < edgePadding) {
+                newX = edgePadding
             }
 
-            // Adjust vertical position
-            if (y + rect.height > viewportHeight) {
-                adjustedY = Math.max(0, viewportHeight - rect.height - 8)
+            // Adjust vertical position with padding from edges
+            if (y + rect.height > viewportHeight - edgePadding) {
+                newY = Math.max(
+                    edgePadding,
+                    viewportHeight - rect.height - edgePadding
+                )
             }
+            // Keep away from top edge too
+            if (newY < edgePadding) {
+                newY = edgePadding
+            }
+
+            adjustedX = newX
+            adjustedY = newY
         }
     })
 

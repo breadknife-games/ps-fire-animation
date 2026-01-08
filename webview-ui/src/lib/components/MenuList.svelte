@@ -20,32 +20,38 @@
             const viewportWidth = window.innerWidth
             const viewportHeight = window.innerHeight
 
-            let x = triggerRect.right + 2
-            let y = triggerRect.top
+            // Padding from edges to avoid header/footer overlap
+            const edgePadding = 30
+
+            let newX = triggerRect.right + 2
+            let newY = triggerRect.top
 
             // Check if submenu would go off the right edge
-            if (x + submenuRect.width > viewportWidth) {
+            if (newX + submenuRect.width > viewportWidth - edgePadding) {
                 // Position to the left of the trigger instead
-                x = triggerRect.left - submenuRect.width - 2
+                newX = triggerRect.left - submenuRect.width - 2
             }
 
             // Ensure submenu doesn't go off the left edge
-            if (x < 0) {
-                x = 8
+            if (newX < edgePadding) {
+                newX = edgePadding
             }
 
             // Check if submenu would go off the bottom edge
-            if (y + submenuRect.height > viewportHeight) {
+            if (newY + submenuRect.height > viewportHeight - edgePadding) {
                 // Align submenu bottom with viewport bottom
-                y = Math.max(8, viewportHeight - submenuRect.height - 8)
+                newY = Math.max(
+                    edgePadding,
+                    viewportHeight - submenuRect.height - edgePadding
+                )
             }
 
             // Ensure submenu doesn't go off the top edge
-            if (y < 0) {
-                y = 8
+            if (newY < edgePadding) {
+                newY = edgePadding
             }
 
-            submenuPos = { x, y }
+            submenuPos = { x: newX, y: newY }
             submenuReady = true
         } else {
             submenuReady = false
@@ -129,10 +135,10 @@
     <!-- svelte-ignore a11y_no_static_element_interactions -->
     <div
         bind:this={submenuEl}
-        class="fixed z-9999 transition-opacity duration-75"
+        class="fixed transition-opacity duration-75"
         class:opacity-0={!submenuReady}
         class:pointer-events-none={!submenuReady}
-        style="left: {submenuPos.x}px; top: {submenuPos.y}px;"
+        style="left: {submenuPos.x}px; top: {submenuPos.y}px; z-index: 10000;"
         onmouseleave={closeSubmenu}>
         <svelte:self items={submenuItems} {onItemClick} />
     </div>
