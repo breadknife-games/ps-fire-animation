@@ -566,7 +566,7 @@ async function moveFrameRight(layerId: number): Promise<TimelineState> {
 
 async function createLayer(
     anchorLayerId: number,
-    position: 'above' | 'below',
+    position: 'above' | 'below' | 'inside',
     name?: string,
     colorValue?: string
 ): Promise<TimelineState> {
@@ -589,7 +589,7 @@ async function createLayer(
 
 async function createGroup(
     anchorLayerId: number,
-    position: 'above' | 'below',
+    position: 'above' | 'below' | 'inside',
     name?: string,
     colorValue?: string
 ): Promise<TimelineState> {
@@ -606,7 +606,7 @@ async function createGroup(
 
 async function createVideoGroup(
     anchorLayerId: number,
-    position: 'above' | 'below',
+    position: 'above' | 'below' | 'inside',
     name?: string,
     colorValue?: string
 ): Promise<TimelineState> {

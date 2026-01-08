@@ -62,19 +62,19 @@ export const timelineMoveFrameRight = (layerId: number) =>
     timelineService.moveFrameRight(layerId)
 export const timelineCreateLayer = (
     anchorLayerId: number,
-    position: 'above' | 'below',
+    position: 'above' | 'below' | 'inside',
     name?: string,
     colorValue?: string
 ) => timelineService.createLayer(anchorLayerId, position, name, colorValue)
 export const timelineCreateGroup = (
     anchorLayerId: number,
-    position: 'above' | 'below',
+    position: 'above' | 'below' | 'inside',
     name?: string,
     colorValue?: string
 ) => timelineService.createGroup(anchorLayerId, position, name, colorValue)
 export const timelineCreateVideoGroup = (
     anchorLayerId: number,
-    position: 'above' | 'below',
+    position: 'above' | 'below' | 'inside',
     name?: string,
     colorValue?: string
 ) => timelineService.createVideoGroup(anchorLayerId, position, name, colorValue)

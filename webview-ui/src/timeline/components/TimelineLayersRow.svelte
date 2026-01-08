@@ -288,32 +288,46 @@
         },
         {
             label: 'New Layer',
-            action: () => createLayer(row.id, 'below')
+            action: () => createLayer(row.id, isGroup ? 'inside' : 'below')
         },
         {
             label: 'New Group',
-            action: () => createGroup(row.id, 'below'),
+            action: () => createGroup(row.id, isGroup ? 'inside' : 'below'),
             submenu: [
                 {
                     label: 'Default',
-                    action: () => createGroup(row.id, 'below')
+                    action: () =>
+                        createGroup(row.id, isGroup ? 'inside' : 'below')
                 },
                 { label: '', action: () => {}, separator: true },
                 ...semanticColors.map(color => ({
                     label: color.name,
                     color: layerColors[color.value].hex,
                     action: () =>
-                        createGroup(row.id, 'below', color.name, color.value)
+                        createGroup(
+                            row.id,
+                            isGroup ? 'inside' : 'below',
+                            color.name,
+                            color.value
+                        )
                 }))
             ]
         },
         {
             label: 'New Frame Group',
-            action: () => createVideoGroup(row.id, 'below'),
+            action: () =>
+                createVideoGroup(
+                    row.id,
+                    isGroup || isVideo ? 'inside' : 'below'
+                ),
             submenu: [
                 {
                     label: 'Default',
-                    action: () => createVideoGroup(row.id, 'below')
+                    action: () =>
+                        createVideoGroup(
+                            row.id,
+                            isGroup || isVideo ? 'inside' : 'below'
+                        )
                 },
                 { label: '', action: () => {}, separator: true },
                 ...semanticColors.map(color => ({
@@ -322,7 +336,7 @@
                     action: () =>
                         createVideoGroup(
                             row.id,
-                            'below',
+                            isGroup || isVideo ? 'inside' : 'below',
                             color.name,
                             color.value
                         )

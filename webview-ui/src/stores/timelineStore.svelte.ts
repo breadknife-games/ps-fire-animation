@@ -194,7 +194,7 @@ export async function moveLayer(
 
 export async function createLayer(
     anchorLayerId: number,
-    position: 'above' | 'below',
+    position: 'above' | 'below' | 'inside',
     name?: string,
     colorValue?: string
 ) {
@@ -210,7 +210,7 @@ export async function createLayer(
 
 export async function createGroup(
     anchorLayerId: number,
-    position: 'above' | 'below',
+    position: 'above' | 'below' | 'inside',
     name?: string,
     colorValue?: string
 ) {
@@ -226,7 +226,7 @@ export async function createGroup(
 
 export async function createVideoGroup(
     anchorLayerId: number,
-    position: 'above' | 'below',
+    position: 'above' | 'below' | 'inside',
     name?: string,
     colorValue?: string
 ) {
