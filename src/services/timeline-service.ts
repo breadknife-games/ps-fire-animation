@@ -635,16 +635,21 @@ async function createVideoGroup(
 }
 
 /**
- * Find the first parent regular group and return its frame count
+ * Find the root-most parent regular group and return its frame count
  */
 function findParentGroupFrameCount(layer: FireLayer): number {
     let current: FireLayer | null = layer
+    let rootGroup: FireLayer | null = null
 
     while (current) {
         if (current.type === FireLayerType.Group) {
-            return findMaxFrameCount(current.children as FireLayer[])
+            rootGroup = current
         }
         current = current.parent
+    }
+
+    if (rootGroup) {
+        return findMaxFrameCount(rootGroup.children as FireLayer[])
     }
 
     return 1
